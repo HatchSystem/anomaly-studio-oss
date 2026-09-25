@@ -22,8 +22,8 @@
     <Description>FXアノマリー分析デスクトップアプリ（Uno Platform / Skia Desktop）</Description>
 
     <!-- アプリアイコン（タスクバー・ウィンドウ）とスプラッシュは AnomalyStudio ロゴで統一 -->
-    <UnoIconForegroundFile>Assets\Icons\icon_foreground.png</UnoIconForegroundFile>
-    <UnoSplashScreenFile>Assets\Splash\splash_screen.png</UnoSplashScreenFile>
+    <UnoIconForegroundFile>Assets/Icons/icon_foreground.png</UnoIconForegroundFile>
+    <UnoSplashScreenFile>Assets/Splash/splash_screen.png</UnoSplashScreenFile>
 
     <!--
       UnoFeatures are used to quickly add and manage features enabled for your app.
