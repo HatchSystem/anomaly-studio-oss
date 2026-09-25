@@ -1,0 +1,76 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- 書体: Yu Gothic UI（欧文は Segoe UI 系、日本語のウェイトが揃う）。時計の数字は Segoe UI Variable Display、等幅は Cascadia Mono -->
+  <FontFamily x:Key="AsFontFamily">Yu Gothic UI</FontFamily>
+  <FontFamily x:Key="AsDisplayFontFamily">Yu Gothic UI</FontFamily>
+  <FontFamily x:Key="AsClockFontFamily">Segoe UI Variable Display</FontFamily>
+  <FontFamily x:Key="AsMonoFontFamily">Cascadia Mono, Consolas</FontFamily>
+  <FontFamily x:Key="AsIconFontFamily">ms-appx:///Assets/Fonts/Phosphor.ttf#Phosphor</FontFamily>
+  <FontFamily x:Key="AsIconFillFontFamily">ms-appx:///Assets/Fonts/Phosphor-Fill.ttf#Phosphor-Fill</FontFamily>
+
+  <!-- Fluent コントロール全体の既定書体を上書き -->
+  <FontFamily x:Key="ContentControlThemeFontFamily">Yu Gothic UI</FontFamily>
+
+  <x:Double x:Key="AsCaptionFontSize">12</x:Double>
+  <x:Double x:Key="AsBodyFontSize">14</x:Double>
+  <x:Double x:Key="AsSubtitleFontSize">14</x:Double>
+  <x:Double x:Key="AsTitleFontSize">20</x:Double>
+  <x:Double x:Key="AsLargeTitleFontSize">28</x:Double>
+
+  <Style x:Key="AsBaseTextStyle" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource AsFontFamily}" />
+    <Setter Property="FontSize" Value="{StaticResource AsBodyFontSize}" />
+    <Setter Property="Foreground" Value="{ThemeResource AsTextPrimaryBrush}" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style x:Key="AsBodyTextStyle" TargetType="TextBlock" BasedOn="{StaticResource AsBaseTextStyle}" />
+
+  <Style x:Key="AsBodyStrongTextStyle" TargetType="TextBlock" BasedOn="{StaticResource AsBaseTextStyle}">
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style x:Key="AsCaptionTextStyle" TargetType="TextBlock" BasedOn="{StaticResource AsBaseTextStyle}">
+    <Setter Property="FontSize" Value="{StaticResource AsCaptionFontSize}" />
+    <Setter Property="Foreground" Value="{ThemeResource AsTextSecondaryBrush}" />
+  </Style>
+
+  <Style x:Key="AsSecondaryTextStyle" TargetType="TextBlock" BasedOn="{StaticResource AsBaseTextStyle}">
+    <Setter Property="Foreground" Value="{ThemeResource AsTextSecondaryBrush}" />
+  </Style>
+
+  <Style x:Key="AsTitleTextStyle" TargetType="TextBlock" BasedOn="{StaticResource AsBaseTextStyle}">
+    <Setter Property="FontFamily" Value="{StaticResource AsDisplayFontFamily}" />
+    <Setter Property="FontSize" Value="{StaticResource AsTitleFontSize}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style x:Key="AsLargeTitleTextStyle" TargetType="TextBlock" BasedOn="{StaticResource AsTitleTextStyle}">
+    <Setter Property="FontSize" Value="{StaticResource AsLargeTitleFontSize}" />
+  </Style>
+
+  <Style x:Key="AsSectionHeaderTextStyle" TargetType="TextBlock" BasedOn="{StaticResource AsBaseTextStyle}">
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="0,20,0,8" />
+  </Style>
+
+  <Style x:Key="AsGridHeaderTextStyle" TargetType="TextBlock" BasedOn="{StaticResource AsBaseTextStyle}">
+    <Setter Property="FontSize" Value="{StaticResource AsCaptionFontSize}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{ThemeResource AsTextSecondaryBrush}" />
+  </Style>
+
+  <Style x:Key="AsNumberTextStyle" TargetType="TextBlock" BasedOn="{StaticResource AsBaseTextStyle}">
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="TextAlignment" Value="Right" />
+  </Style>
+
+  <Style x:Key="AsIconStyle" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource AsIconFontFamily}" />
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="Foreground" Value="{ThemeResource AsTextSecondaryBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+  </Style>
+</ResourceDictionary>

@@ -1,0 +1,213 @@
+<Page x:Class="AnomalyStudio.Views.CalendarPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:helpers="using:AnomalyStudio.Helpers"
+      xmlns:vm="using:AnomalyStudio.ViewModels"
+      Background="Transparent">
+  <!-- 4a/4b 経済指標カレンダー: 週次/月次・重要度と国の絞り込み・日付グループ付き一覧・結果は予想比で↑↓ -->
+  <Page.Resources>
+    <!-- 列幅（ヘッダーと行で共有）: 時刻・国・経済指標・重要度・前回・予想・結果。
+         最小幅で内容が収まり、余った幅は比率で配分する（書式は Helpers/GridColumns.cs） -->
+    <x:String x:Key="GridLayout">64, 56, 4*:220, 1.2*:100, 1*:80, 1*:80, 1*:100</x:String>
+
+    <Style x:Key="TabTextStyle" TargetType="TextBlock" BasedOn="{StaticResource AsBaseTextStyle}">
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+  </Page.Resources>
+
+  <Grid Padding="{StaticResource AsPagePadding}" RowSpacing="12">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <!-- タイトル・週次/月次（SelectorBar 相当）・次の指標・時計 -->
+    <Grid ColumnSpacing="20">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <TextBlock Text="経済指標カレンダー" Style="{StaticResource AsTitleTextStyle}" />
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+        <Button Style="{StaticResource AsSubtleButtonStyle}" Command="{x:Bind ViewModel.ShowWeeklyCommand}">
+          <Grid>
+            <TextBlock Text="週次" Style="{StaticResource TabTextStyle}" FontWeight="SemiBold" Visibility="{x:Bind ViewModel.IsWeekly, Mode=OneWay}" />
+            <TextBlock Text="週次" Style="{StaticResource TabTextStyle}" Foreground="{ThemeResource AsTextSecondaryBrush}"
+                       Visibility="{x:Bind ViewModel.IsMonthly, Mode=OneWay}" />
+            <Rectangle Height="3" Width="16" RadiusX="1.5" RadiusY="1.5" Margin="0,0,0,-8" VerticalAlignment="Bottom"
+                       Fill="{ThemeResource AsAccentBrush}" Visibility="{x:Bind ViewModel.IsWeekly, Mode=OneWay}" />
+          </Grid>
+        </Button>
+        <Button Style="{StaticResource AsSubtleButtonStyle}" Command="{x:Bind ViewModel.ShowMonthlyCommand}">
+          <Grid>
+            <TextBlock Text="月次" Style="{StaticResource TabTextStyle}" FontWeight="SemiBold" Visibility="{x:Bind ViewModel.IsMonthly, Mode=OneWay}" />
+            <TextBlock Text="月次" Style="{StaticResource TabTextStyle}" Foreground="{ThemeResource AsTextSecondaryBrush}"
+                       Visibility="{x:Bind ViewModel.IsWeekly, Mode=OneWay}" />
+            <Rectangle Height="3" Width="16" RadiusX="1.5" RadiusY="1.5" Margin="0,0,0,-8" VerticalAlignment="Bottom"
+                       Fill="{ThemeResource AsAccentBrush}" Visibility="{x:Bind ViewModel.IsMonthly, Mode=OneWay}" />
+          </Grid>
+        </Button>
+      </StackPanel>
+      <TextBlock Grid.Column="3" Style="{StaticResource AsCaptionTextStyle}">
+        <Run Text="次:" /> <Run Text="{x:Bind ViewModel.NextName, Mode=OneWay}" />
+        <Run Text="{x:Bind ViewModel.NextTiming, Mode=OneWay}" FontWeight="Bold" Foreground="{ThemeResource AsTextPrimaryBrush}" />
+      </TextBlock>
+      <TextBlock Grid.Column="4" Text="{x:Bind ViewModel.TimeText, Mode=OneWay}"
+                 FontFamily="{StaticResource AsClockFontFamily}" FontSize="20" FontWeight="SemiBold"
+                 Foreground="{ThemeResource AsTextPrimaryBrush}" />
+    </Grid>
+
+    <!-- 期間移動・絞り込み -->
+    <Grid Grid.Row="1" ColumnSpacing="8">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <Button Width="34" Height="32" Padding="0" FontFamily="{StaticResource AsIconFontFamily}"
+              Content="{StaticResource IconCaretLeft}" Command="{x:Bind ViewModel.PreviousCommand}" ToolTipService.ToolTip="前の期間" />
+      <Button Grid.Column="1" Height="32" Content="今日" Command="{x:Bind ViewModel.TodayCommand}" />
+      <Button Grid.Column="2" Width="34" Height="32" Padding="0" FontFamily="{StaticResource AsIconFontFamily}"
+              Content="{StaticResource IconCaretRight}" Command="{x:Bind ViewModel.NextCommand}" ToolTipService.ToolTip="次の期間" />
+      <TextBlock Grid.Column="3" Text="{x:Bind ViewModel.RangeLabel, Mode=OneWay}" Margin="6,0,0,0"
+                 Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13" />
+
+      <!-- 取得状況と手動更新（出典: GMO クリック証券） -->
+      <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Center">
+        <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" Style="{StaticResource AsCaptionTextStyle}"
+                   ToolTipService.ToolTip="出典: GMO クリック証券 経済指標カレンダー" />
+        <Button Width="32" Height="32" Padding="0" Style="{StaticResource AsSubtleButtonStyle}"
+                FontFamily="{StaticResource AsIconFontFamily}" Content="{StaticResource IconArrowsClockwise}"
+                Command="{x:Bind ViewModel.ReloadCommand}" ToolTipService.ToolTip="表示中の期間を取得し直す" />
+      </StackPanel>
+
+      <ComboBox Grid.Column="5" MinWidth="160" ItemsSource="{x:Bind ViewModel.ImportanceOptions}"
+                SelectedItem="{x:Bind ViewModel.SelectedImportance, Mode=TwoWay}">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="x:String">
+            <TextBlock><Run Text="重要度" Foreground="{ThemeResource AsTextSecondaryBrush}" />  <Run Text="{x:Bind}" Foreground="{ThemeResource AsAccentBrush}" /></TextBlock>
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+
+      <DropDownButton Grid.Column="6" MinWidth="130">
+        <TextBlock><Run Text="国・地域" Foreground="{ThemeResource AsTextSecondaryBrush}" />  <Run Text="{x:Bind ViewModel.CountryLabel, Mode=OneWay}" FontWeight="SemiBold" /></TextBlock>
+        <DropDownButton.Flyout>
+          <Flyout Placement="BottomEdgeAlignedRight">
+            <StackPanel Width="220" Spacing="2">
+              <Button Content="すべて選択 / 解除" Style="{StaticResource AsSubtleButtonStyle}" HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Left" Command="{x:Bind ViewModel.SelectAllCountriesCommand}" />
+              <Rectangle Height="1" Fill="{ThemeResource AsDividerBrush}" Margin="0,2" />
+              <!-- 国が多いので一覧はスクロールさせる -->
+              <ScrollViewer MaxHeight="360">
+                <ItemsControl ItemsSource="{x:Bind ViewModel.Countries}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:CountryOptionViewModel">
+                      <CheckBox IsChecked="{x:Bind IsChecked, Mode=TwoWay}" MinHeight="32">
+                        <TextBlock><Run Text="{x:Bind Code}" FontWeight="SemiBold" />  <Run Text="{x:Bind Name}" Foreground="{ThemeResource AsTextSecondaryBrush}" /></TextBlock>
+                      </CheckBox>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </StackPanel>
+          </Flyout>
+        </DropDownButton.Flyout>
+      </DropDownButton>
+    </Grid>
+
+    <!-- データグリッド（日付グループ付き） -->
+    <Border Grid.Row="2" Style="{StaticResource AsCardStyle}">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="34" />
+          <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid Padding="12,0" BorderBrush="{ThemeResource AsDividerBrush}" BorderThickness="0,0,0,1" helpers:GridColumns.Layout="{StaticResource GridLayout}">
+          <TextBlock Text="時刻" Style="{StaticResource AsGridHeaderTextStyle}" />
+          <TextBlock Grid.Column="1" Text="国" Style="{StaticResource AsGridHeaderTextStyle}" />
+          <TextBlock Grid.Column="2" Text="経済指標・イベント" Style="{StaticResource AsGridHeaderTextStyle}" />
+          <TextBlock Grid.Column="3" Text="重要度" Style="{StaticResource AsGridHeaderTextStyle}" />
+          <TextBlock Grid.Column="4" Text="前回" Style="{StaticResource AsGridHeaderTextStyle}" HorizontalAlignment="Right" />
+          <TextBlock Grid.Column="5" Text="予想" Style="{StaticResource AsGridHeaderTextStyle}" HorizontalAlignment="Right" />
+          <TextBlock Grid.Column="6" Text="結果" Style="{StaticResource AsGridHeaderTextStyle}" HorizontalAlignment="Right" />
+        </Grid>
+
+        <ScrollViewer x:Name="EventScroll" Grid.Row="1">
+          <ItemsControl x:Name="GroupList" ItemsSource="{x:Bind ViewModel.Groups}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:CalendarGroupViewModel">
+                <StackPanel>
+                  <Grid Height="30" Padding="12,0" Background="{ThemeResource AsGroupHeaderBrush}"
+                        BorderBrush="{ThemeResource AsDividerBrush}" BorderThickness="0,0,0,1">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="{x:Bind Label}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="12" />
+                      <Border CornerRadius="4" Padding="6,0" Height="18" VerticalAlignment="Center"
+                              Background="{ThemeResource AsAccentBrush}" Visibility="{x:Bind IsToday}">
+                        <TextBlock Text="今日" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"
+                                   Foreground="{ThemeResource AsTextOnAccentBrush}" />
+                      </Border>
+                    </StackPanel>
+                  </Grid>
+                  <ItemsControl ItemsSource="{x:Bind Rows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:CalendarRowViewModel">
+                        <Grid Height="32" BorderBrush="{ThemeResource AsDividerBrush}" BorderThickness="0,0,0,1">
+                          <Border Background="{ThemeResource AsZebraBrush}" Visibility="{x:Bind IsOdd}" />
+                          <Border Background="{ThemeResource AsRowSelectedBrush}" Visibility="{x:Bind IsNext}" />
+                          <Rectangle Width="3" HorizontalAlignment="Left" Fill="{ThemeResource AsAccentBrush}" Visibility="{x:Bind IsNext}" />
+                          <Grid Padding="12,0" helpers:GridColumns.Layout="{StaticResource GridLayout}">
+                            <TextBlock Text="{x:Bind Time}" Style="{StaticResource AsBodyTextStyle}" FontSize="13" />
+                            <Border Grid.Column="1" Style="{StaticResource AsCodeBadgeStyle}">
+                              <TextBlock Text="{x:Bind Country}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"
+                                         Foreground="{ThemeResource AsTextPrimaryBrush}" />
+                            </Border>
+                            <TextBlock Grid.Column="2" Text="{x:Bind Name}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13"
+                                       Visibility="{x:Bind IsEvent}" />
+                            <TextBlock Grid.Column="2" Text="{x:Bind Name}" Style="{StaticResource AsSecondaryTextStyle}" FontSize="13"
+                                       Visibility="{x:Bind IsHoliday}" />
+                            <TextBlock Grid.Column="3" FontSize="12" VerticalAlignment="Center">
+                              <Run Text="{x:Bind StarsOn}" Foreground="{ThemeResource AsAccentBrush}" /><Run Text="{x:Bind StarsOff}" Foreground="{ThemeResource AsStarOffBrush}" />
+                            </TextBlock>
+                            <TextBlock Grid.Column="4" Text="{x:Bind Previous}" Style="{StaticResource AsNumberTextStyle}" FontSize="13"
+                                       Foreground="{ThemeResource AsTextSecondaryBrush}" />
+                            <TextBlock Grid.Column="5" Text="{x:Bind Forecast}" Style="{StaticResource AsNumberTextStyle}" FontSize="13"
+                                       Foreground="{ThemeResource AsTextSecondaryBrush}" />
+                            <StackPanel Grid.Column="6" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="2">
+                              <TextBlock Text="{StaticResource IconArrowUp}" Style="{StaticResource AsIconStyle}" FontSize="12"
+                                         Foreground="{ThemeResource AsPositiveBrush}" Visibility="{x:Bind IsUp}" />
+                              <TextBlock Text="{StaticResource IconArrowDown}" Style="{StaticResource AsIconStyle}" FontSize="12"
+                                         Foreground="{ThemeResource AsNegativeBrush}" Visibility="{x:Bind IsDown}" />
+                              <TextBlock Text="{x:Bind Actual}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13"
+                                         Foreground="{ThemeResource AsPositiveBrush}" Visibility="{x:Bind IsUp}" />
+                              <TextBlock Text="{x:Bind Actual}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13"
+                                         Foreground="{ThemeResource AsNegativeBrush}" Visibility="{x:Bind IsDown}" />
+                              <TextBlock Text="{x:Bind Actual}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13"
+                                         Visibility="{x:Bind IsFlat}" />
+                            </StackPanel>
+                          </Grid>
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+
+        <TextBlock Grid.Row="1" Text="この期間に表示できる指標はありません" HorizontalAlignment="Center" Margin="0,40,0,0"
+                   VerticalAlignment="Top" Style="{StaticResource AsSecondaryTextStyle}"
+                   Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" />
+      </Grid>
+    </Border>
+  </Grid>
+</Page>

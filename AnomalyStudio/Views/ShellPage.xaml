@@ -1,0 +1,95 @@
+<Page x:Class="AnomalyStudio.Views.ShellPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:controls="using:AnomalyStudio.Controls"
+      xmlns:services="using:AnomalyStudio.Services"
+      Background="{ThemeResource AsMicaBrush}">
+  <!-- 左レール（ロゴ・ナビ・設定・アバター）+ 上部（アプリ名と版）+ Layer 上のコンテンツ。メニューの前後移動は PageUp / PageDown -->
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="56" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="48" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <!-- ロゴ -->
+    <Border Width="28" Height="28" Margin="0,2,0,0"
+            VerticalAlignment="Center" HorizontalAlignment="Center">
+      <Image Source="ms-appx:///Assets/Images/anomalystudio-logo.png" Stretch="Uniform" />
+    </Border>
+
+    <!-- ナビゲーションレール -->
+    <Grid Grid.Row="1" Padding="0,16,0,12">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <StackPanel Spacing="4">
+        <controls:RailButton Key="dashboard" Glyph="{StaticResource IconSquaresFour}"
+                             ToolTipService.ToolTip="ダッシュボード"
+                             SelectedKey="{x:Bind ViewModel.SelectedKey, Mode=OneWay}"
+                             Command="{x:Bind ViewModel.NavigateCommand}" />
+        <controls:RailButton Key="entries" Glyph="{StaticResource IconCrosshair}"
+                             ToolTipService.ToolTip="エントリー一覧"
+                             SelectedKey="{x:Bind ViewModel.SelectedKey, Mode=OneWay}"
+                             Command="{x:Bind ViewModel.NavigateCommand}" />
+        <controls:RailButton Key="calendar" Glyph="{StaticResource IconCalendarDots}"
+                             ToolTipService.ToolTip="経済指標カレンダー"
+                             SelectedKey="{x:Bind ViewModel.SelectedKey, Mode=OneWay}"
+                             Command="{x:Bind ViewModel.NavigateCommand}" />
+        <controls:RailButton Key="backtest" Glyph="{StaticResource IconFlask}"
+                             ToolTipService.ToolTip="ウォークフォワード・バックテスト"
+                             SelectedKey="{x:Bind ViewModel.SelectedKey, Mode=OneWay}"
+                             Command="{x:Bind ViewModel.NavigateCommand}" />
+        <controls:RailButton Key="optimizationCheck" Glyph="{StaticResource IconEye}"
+                             ToolTipService.ToolTip="最適化確認"
+                             SelectedKey="{x:Bind ViewModel.SelectedKey, Mode=OneWay}"
+                             Command="{x:Bind ViewModel.NavigateCommand}" />
+        <controls:RailButton Key="extraction" Glyph="{StaticResource IconFunnelSimple}"
+                             ToolTipService.ToolTip="データ抽出設定"
+                             SelectedKey="{x:Bind ViewModel.SelectedKey, Mode=OneWay}"
+                             Command="{x:Bind ViewModel.NavigateCommand}" />
+      </StackPanel>
+      <StackPanel Grid.Row="1" Spacing="12">
+        <controls:RailButton Key="settings" Glyph="{StaticResource IconGearSix}"
+                             ToolTipService.ToolTip="設定"
+                             SelectedKey="{x:Bind ViewModel.SelectedKey, Mode=OneWay}"
+                             Command="{x:Bind ViewModel.NavigateCommand}" />
+        <!-- アカウント（ログインは未実装。ログイン後はユーザーの表示に置き換える） -->
+        <Border Width="32" Height="32" CornerRadius="16" HorizontalAlignment="Center"
+                Background="{ThemeResource AsAvatarBrush}" ToolTipService.ToolTip="ログインしていません">
+          <TextBlock Text="{StaticResource IconUser}" FontFamily="{StaticResource AsIconFontFamily}" FontSize="16"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                     Foreground="{ThemeResource AsAvatarTextBrush}" />
+        </Border>
+      </StackPanel>
+    </Grid>
+
+    <!-- 上部バー: アプリ名と版 -->
+    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="8,0,0,0" VerticalAlignment="Center">
+      <TextBlock Text="{x:Bind ViewModel.AppName}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13" />
+      <TextBlock Text="{x:Bind ViewModel.AppVersion}" Style="{StaticResource AsCaptionTextStyle}" />
+      <!-- 更新をダウンロード済みのときの目印。この帯はウィンドウのドラッグ領域で押せないので、表示だけにする -->
+      <TextBlock Text="{x:Bind ViewModel.UpdateNotice, Mode=OneWay}" Style="{StaticResource AsCaptionTextStyle}"
+                 Foreground="{ThemeResource AsAccentBrush}" Visibility="{x:Bind ViewModel.Updates.IsReadyToRestart, Mode=OneWay}" />
+    </StackPanel>
+
+    <!-- タイトルバーのドラッグ領域（アプリ名を含む上部）。右端の最小化・最大化・閉じるボタン（46px × 3）は覆わない。
+         覆うとボタンの位置がドラッグ扱いになり、押しても動かない -->
+    <Border x:Name="TitleBarDragRegion" Grid.Column="1" Margin="0,0,138,0" Background="Transparent" />
+
+    <!-- コンテンツ（Layer） -->
+    <Border Grid.Row="1" Grid.Column="1" Background="{ThemeResource AsLayerBrush}"
+            BorderBrush="{ThemeResource AsStrokeBrush}" BorderThickness="1,1,0,0" CornerRadius="8,0,0,0">
+      <!-- ページ切り替えのアニメーションは使わない（空白の瞬間がちらつきに見えるため） -->
+      <Frame x:Name="ContentFrame">
+        <Frame.ContentTransitions>
+          <TransitionCollection />
+        </Frame.ContentTransitions>
+      </Frame>
+    </Border>
+  </Grid>
+</Page>

@@ -1,0 +1,52 @@
+<Project Sdk="Uno.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net10.0-desktop</TargetFrameworks>
+
+    <OutputType>Exe</OutputType>
+    <UnoSingleProject>true</UnoSingleProject>
+
+    <!-- Display name -->
+    <ApplicationTitle>AnomalyStudio</ApplicationTitle>
+    <!-- App Identifier -->
+    <ApplicationId>jp.hatchsystem.anomalystudio</ApplicationId>
+    <!-- Versions: 唯一の元は git のタグ。リリースの CI が -p:VersionPrefix=0.2.0 -p:VersionSuffix=beta.1 のように渡す（開発中は下の値） -->
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <ApplicationDisplayVersion>$(VersionPrefix)</ApplicationDisplayVersion>
+    <!-- 接尾辞（beta.1 など）を含む版。Uno の SDK は Version を ApplicationDisplayVersion で上書きするので自前で組み立てる -->
+    <AppVersion>$(VersionPrefix)</AppVersion>
+    <AppVersion Condition="'$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</AppVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <!-- Package Publisher -->
+    <ApplicationPublisher>HatchSystem</ApplicationPublisher>
+    <!-- Package Description -->
+    <Description>FXアノマリー分析デスクトップアプリ（Uno Platform / Skia Desktop）</Description>
+
+    <!-- アプリアイコン（タスクバー・ウィンドウ）とスプラッシュは AnomalyStudio ロゴで統一 -->
+    <UnoIconForegroundFile>Assets\Icons\icon_foreground.png</UnoIconForegroundFile>
+    <UnoSplashScreenFile>Assets\Splash\splash_screen.png</UnoSplashScreenFile>
+
+    <!--
+      UnoFeatures are used to quickly add and manage features enabled for your app.
+      https://aka.platform.uno/singleproject-features
+    -->
+    <UnoFeatures>
+      Mvvm;
+      ThemeService;
+      SkiaRenderer;
+    </UnoFeatures>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AnomalyStudio.Core\AnomalyStudio.Core.csproj" />
+    <PackageReference Include="Velopack" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 画面と更新確認に出す版（ProductInfo.Version）。Uno の SDK は版の属性を生成しないので、メタデータとして埋め込む -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>AppVersion</_Parameter1>
+      <_Parameter2>$(AppVersion)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- 市場データ取込・保存・アノマリー分析エンジン（UI 非依存。単体テストの対象） -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>AnomalyStudio.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DuckDB.NET.Data.Full" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AnomalyStudio.Core.Tests" />
+    <InternalsVisibleTo Include="AnomalyStudio.Bench" />
+  </ItemGroup>
+</Project>

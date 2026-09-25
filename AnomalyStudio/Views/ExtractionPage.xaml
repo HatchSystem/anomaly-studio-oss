@@ -1,0 +1,131 @@
+<Page x:Class="AnomalyStudio.Views.ExtractionPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:vm="using:AnomalyStudio.ViewModels"
+      x:Name="Root"
+      Background="Transparent">
+  <!-- 6a/6b データ抽出設定: SettingsCard 構成のモード一覧。左端のアイコンでモード詳細を開き、トグルで有効／無効 -->
+  <ScrollViewer>
+    <StackPanel Padding="{StaticResource AsSettingsPagePadding}" MaxWidth="{StaticResource AsSettingsMaxWidth}" HorizontalAlignment="Stretch">
+      <Grid Margin="0,0,0,16">
+        <TextBlock Text="データ抽出設定" Style="{StaticResource AsTitleTextStyle}" />
+        <Button HorizontalAlignment="Right" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.AddModeCommand}"
+                Padding="16,6">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBlock Text="{StaticResource IconPlus}" FontFamily="{StaticResource AsIconFontFamily}" VerticalAlignment="Center" />
+            <TextBlock Text="モードを追加" FontWeight="SemiBold" />
+          </StackPanel>
+        </Button>
+      </Grid>
+
+      <!-- 分析: Dukascopy から取り込み、全 80,640 候補を 30/90/180/365 日で検証する -->
+      <TextBlock Text="分析" Style="{StaticResource AsSectionHeaderTextStyle}" Margin="0,0,0,8" />
+      <Border Style="{StaticResource AsCardStyle}" Padding="16,12" Margin="0,0,0,16">
+        <StackPanel Spacing="10">
+          <Grid ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="2" VerticalAlignment="Center">
+              <TextBlock Text="アノマリー分析" Style="{StaticResource AsBodyStrongTextStyle}" />
+              <TextBlock Text="今日を基準日に、直近365日の1分足で全80,640候補を検証してポイントを更新します"
+                         Style="{StaticResource AsCaptionTextStyle}" TextWrapping="Wrap" />
+            </StackPanel>
+            <Button Grid.Column="1" Content="データのみ更新" Command="{x:Bind ViewModel.UpdateDataCommand}"
+                    IsEnabled="{x:Bind ViewModel.Workspace.IsBusy, Mode=OneWay, Converter={StaticResource AsInverseBoolConverter}}" />
+            <Button Grid.Column="2" Style="{StaticResource AccentButtonStyle}" Padding="16,6" Command="{x:Bind ViewModel.RunAnalysisCommand}"
+                    IsEnabled="{x:Bind ViewModel.Workspace.IsBusy, Mode=OneWay, Converter={StaticResource AsInverseBoolConverter}}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="{StaticResource IconPlay}" FontFamily="{StaticResource AsIconFillFontFamily}" VerticalAlignment="Center" />
+                <TextBlock Text="分析を実行" FontWeight="SemiBold" />
+              </StackPanel>
+            </Button>
+          </Grid>
+
+          <ItemsControl ItemsSource="{x:Bind ViewModel.Statuses}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:SymbolStatusRow">
+                <Grid ColumnSpacing="12" Padding="0,2">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="72" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="{x:Bind Symbol}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13" />
+                  <TextBlock Grid.Column="1" Text="{x:Bind Coverage}" Style="{StaticResource AsCaptionTextStyle}" />
+                  <TextBlock Grid.Column="2" Text="{x:Bind Analysis}" Style="{StaticResource AsCaptionTextStyle}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Grid ColumnSpacing="12" Visibility="{x:Bind ViewModel.Workspace.IsBusy, Mode=OneWay}">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="6">
+              <TextBlock Text="{x:Bind ViewModel.Workspace.BusyMessage, Mode=OneWay}" Style="{StaticResource AsCaptionTextStyle}" />
+              <ProgressBar Minimum="0" Maximum="1" Value="{x:Bind ViewModel.Workspace.BusyFraction, Mode=OneWay}" />
+            </StackPanel>
+            <Button Grid.Column="1" Content="中止" Command="{x:Bind ViewModel.CancelCommand}" />
+          </Grid>
+
+          <TextBlock Text="{x:Bind ViewModel.Workspace.LastMessage, Mode=OneWay}" Style="{StaticResource AsCaptionTextStyle}"
+                     TextWrapping="Wrap" Foreground="{ThemeResource AsAccentBrush}" />
+        </StackPanel>
+      </Border>
+
+      <!-- データの初期化: 1 分足・分析結果・バックテスト用のポイントを消す（設定・モード・銘柄・経済指標は残す）。実行前に確認する -->
+      <Border Style="{StaticResource AsSettingsCardStyle}" Margin="0,0,0,16">
+        <Grid ColumnSpacing="16" MinHeight="64">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <StackPanel VerticalAlignment="Center" Spacing="2">
+            <TextBlock Text="データの初期化" Style="{StaticResource AsBodyStrongTextStyle}" />
+            <TextBlock Text="取り込んだ1分足・分析結果・バックテスト用に保存したポイントを削除します（設定・モード・銘柄・経済指標は残します）"
+                       Style="{StaticResource AsCaptionTextStyle}" TextWrapping="Wrap" />
+          </StackPanel>
+          <Button Grid.Column="1" Content="データを初期化" Click="OnResetDataClick" VerticalAlignment="Center"
+                  IsEnabled="{x:Bind ViewModel.Workspace.IsBusy, Mode=OneWay, Converter={StaticResource AsInverseBoolConverter}}" />
+        </Grid>
+      </Border>
+
+      <TextBlock Text="モード" Style="{StaticResource AsSectionHeaderTextStyle}" Margin="0,0,0,8" />
+
+      <ItemsControl ItemsSource="{x:Bind ViewModel.Modes}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:ModeItemViewModel">
+            <Border Style="{StaticResource AsSettingsCardStyle}" Padding="8,0,12,0">
+              <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <!-- 左端のアイコンからモード詳細設定を開く -->
+                <Button Style="{StaticResource AsIconButtonStyle}" Width="40" Height="40" FontSize="20"
+                        Content="{StaticResource IconSliders}" ToolTipService.ToolTip="モード詳細設定を開く"
+                        Command="{Binding ElementName=Root, Path=ViewModel.OpenCommand}" CommandParameter="{x:Bind}" />
+                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                  <TextBlock Text="{x:Bind Name}" Style="{StaticResource AsBodyStrongTextStyle}" />
+                  <TextBlock Text="{x:Bind Description}" Style="{StaticResource AsCaptionTextStyle}" />
+                  <TextBlock Text="{x:Bind DataSize, Mode=OneWay}" Style="{StaticResource AsCaptionTextStyle}"
+                             Foreground="{ThemeResource AsTextTertiaryBrush}" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                  <TextBlock Text="{x:Bind StateLabel, Mode=OneWay}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13" />
+                  <ToggleSwitch IsOn="{x:Bind IsEnabled, Mode=TwoWay}" OnContent="" OffContent="" MinWidth="0" Width="56" />
+                </StackPanel>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+  </ScrollViewer>
+</Page>

@@ -1,0 +1,83 @@
+<ContentDialog x:Class="AnomalyStudio.Views.AiAssistDialog"
+               xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+               Style="{StaticResource DefaultContentDialogStyle}"
+               PrimaryButtonText="設定に反映"
+               SecondaryButtonText="テスト抽出"
+               CloseButtonText="キャンセル"
+               DefaultButton="Secondary"
+               IsPrimaryButtonEnabled="{x:Bind ViewModel.CanApply, Mode=OneWay}"
+               SecondaryButtonClick="OnTestExtractClick">
+  <!-- 8c/8d AIアシスト（モーダル）: 自然文の要望 → LLM で SQL を生成 → 文法チェック → 指示との照合（エラーや不一致なら修正を依頼）→ テスト抽出 → 成功した SQL だけモード詳細へ反映 -->
+  <!-- 既定の最大幅（548px）では SQL が読みにくいので広げ、内側の余白も 24px → 32px にゆとりを持たせる。
+       内容の幅は「最大幅 − 左右の余白 32px × 2」（656px）に収める -->
+  <ContentDialog.Resources>
+    <x:Double x:Key="ContentDialogMaxWidth">720</x:Double>
+    <Thickness x:Key="ContentDialogPadding">32</Thickness>
+  </ContentDialog.Resources>
+
+  <ContentDialog.Title>
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <TextBlock Text="{StaticResource IconSparkle}" FontFamily="{StaticResource AsIconFillFontFamily}"
+                 Foreground="{ThemeResource AsAccentBrush}" VerticalAlignment="Center" FontSize="20" />
+      <TextBlock Text="AIアシスト" Style="{StaticResource AsTitleTextStyle}" />
+    </StackPanel>
+  </ContentDialog.Title>
+
+  <StackPanel Width="640" Spacing="8">
+    <TextBlock Text="どんなデータを抽出したい？" Style="{StaticResource AsBodyTextStyle}" />
+    <Grid ColumnSpacing="8">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <TextBox Text="{x:Bind ViewModel.Prompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+               AcceptsReturn="True" TextWrapping="Wrap" Height="56" />
+      <Button Grid.Column="1" Height="56" MinWidth="96" Padding="16,0" Command="{x:Bind ViewModel.GenerateCommand}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock Text="{StaticResource IconSparkle}" FontFamily="{StaticResource AsIconFillFontFamily}"
+                     Foreground="{ThemeResource AsAccentBrush}" VerticalAlignment="Center" />
+          <TextBlock Text="生成" />
+        </StackPanel>
+      </Button>
+    </Grid>
+
+    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+      <TextBlock Text="生成SQL" Style="{StaticResource AsBodyTextStyle}" />
+      <TextBlock Text="{x:Bind ViewModel.SqlLines, Mode=OneWay}" Style="{StaticResource AsCaptionTextStyle}" />
+    </StackPanel>
+    <TextBox Style="{StaticResource AsCodeTextBoxStyle}" Height="180"
+             Text="{x:Bind ViewModel.GeneratedSql, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+    <!-- 生成・文法チェックの状況 -->
+    <ProgressBar IsIndeterminate="True" MinHeight="2" Height="2" Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />
+    <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}" Style="{StaticResource AsCaptionTextStyle}" TextWrapping="Wrap"
+               Visibility="{x:Bind ViewModel.StatusIsError, Mode=OneWay, Converter={StaticResource AsInverseBoolToVisibility}}" />
+    <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}" Style="{StaticResource AsCaptionTextStyle}" TextWrapping="Wrap"
+               Foreground="{ThemeResource AsNegativeBrush}" Visibility="{x:Bind ViewModel.StatusIsError, Mode=OneWay}" />
+
+    <!-- 文法エラー・指示との不一致: 修正を依頼（問題点と一緒に LLM へ再送）かキャンセル -->
+    <Border Padding="12,8" CornerRadius="4" BorderThickness="1" BorderBrush="{ThemeResource AsNegativeBrush}"
+            Visibility="{x:Bind ViewModel.HasValidationError, Mode=OneWay}">
+      <StackPanel Spacing="8">
+        <TextBlock Text="{x:Bind ViewModel.ProblemTitle, Mode=OneWay}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13"
+                   Foreground="{ThemeResource AsNegativeBrush}" />
+        <TextBlock Text="{x:Bind ViewModel.ValidationError, Mode=OneWay}" Style="{StaticResource AsCaptionTextStyle}"
+                   TextWrapping="Wrap" MaxLines="6" IsTextSelectionEnabled="True" />
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+          <Button Content="修正を依頼" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.RequestFixCommand}" />
+          <Button Content="キャンセル" Command="{x:Bind ViewModel.CancelFixCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- テスト抽出の結果（成功した SQL だけ「設定に反映」できる） -->
+    <TextBlock Text="{x:Bind ViewModel.TestResult, Mode=OneWay}" Style="{StaticResource AsCaptionTextStyle}"
+               Foreground="{ThemeResource AsPositiveBrush}" TextWrapping="Wrap" Visibility="{x:Bind ViewModel.TestPassed, Mode=OneWay}" />
+    <TextBlock Text="{x:Bind ViewModel.TestResult, Mode=OneWay}" Style="{StaticResource AsCaptionTextStyle}"
+               Foreground="{ThemeResource AsNegativeBrush}" TextWrapping="Wrap" Visibility="{x:Bind ViewModel.TestFailed, Mode=OneWay}" />
+    <TextBlock Text="「テスト抽出」に成功すると「設定に反映」できます" Style="{StaticResource AsCaptionTextStyle}"
+               Foreground="{ThemeResource AsTextTertiaryBrush}"
+               Visibility="{x:Bind ViewModel.CanApply, Mode=OneWay, Converter={StaticResource AsInverseBoolToVisibility}}" />
+  </StackPanel>
+</ContentDialog>

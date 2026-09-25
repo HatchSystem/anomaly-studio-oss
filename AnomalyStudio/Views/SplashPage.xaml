@@ -1,0 +1,41 @@
+<Page x:Class="AnomalyStudio.Views.SplashPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{ThemeResource AsMicaBrush}">
+  <!-- 0a/0b 起動画面: ロゴ・アプリ名を中央、下部に処理ステップと進捗バー（2px） -->
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <!-- タイトルバーのドラッグ領域。右端の最小化・最大化・閉じるボタン（46px × 3）は覆わない -->
+    <Border x:Name="TitleBarDragRegion" Height="48" VerticalAlignment="Top" Margin="0,0,138,0" Background="Transparent" />
+
+    <!-- ロゴとアプリ名はウィンドウ全体の中央に置く（下の進捗バーの行を除いた領域で中央にすると上にずれる） -->
+    <StackPanel Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+      <Border Width="144" Height="144">
+        <Image Source="ms-appx:///Assets/Images/anomalystudio-logo.png" Stretch="Uniform" />
+      </Border>
+      <StackPanel Spacing="6">
+        <TextBlock Text="AnomalyStudio" HorizontalAlignment="Center"
+                   Style="{StaticResource AsLargeTitleTextStyle}" />
+        <TextBlock Text="FXアノマリー分析" HorizontalAlignment="Center"
+                   Style="{StaticResource AsCaptionTextStyle}" />
+      </StackPanel>
+    </StackPanel>
+
+    <StackPanel Grid.Row="1" HorizontalAlignment="Center" Spacing="10" Margin="0,0,0,44">
+      <ProgressBar Width="280" IsIndeterminate="True" MinHeight="2" Height="2" />
+      <TextBlock Text="{x:Bind ViewModel.StepText, Mode=OneWay}" HorizontalAlignment="Center"
+                 Style="{StaticResource AsCaptionTextStyle}" />
+    </StackPanel>
+
+    <TextBlock Grid.Row="1" Text="{x:Bind ViewModel.Version}" Margin="16,0,0,12"
+               HorizontalAlignment="Left" VerticalAlignment="Bottom" FontSize="11"
+               Foreground="{ThemeResource AsTextTertiaryBrush}" />
+    <TextBlock Grid.Row="1" Text="© HatchSystem" Margin="0,0,16,12"
+               HorizontalAlignment="Right" VerticalAlignment="Bottom" FontSize="11"
+               Foreground="{ThemeResource AsTextTertiaryBrush}" />
+  </Grid>
+</Page>

@@ -1,0 +1,15 @@
+global using System.Collections.Immutable;
+global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.Logging;
+global using ApplicationExecutionState = Windows.ApplicationModel.Activation.ApplicationExecutionState;
+global using CommunityToolkit.Mvvm.ComponentModel;
+global using CommunityToolkit.Mvvm.Input;
+global using AnomalyStudio.Helpers;
+global using AnomalyStudio.Models;
+global using AnomalyStudio.Services;
+global using AnomalyStudio.ViewModels;
+global using AnomalyStudio.Views;
+global using AnomalyStudio.Core.Backtesting;
+global using AnomalyStudio.Core.EconomicCalendar;
+global using AnomalyStudio.Core.MarketData;
+global using AnomalyStudio.Core.Storage;

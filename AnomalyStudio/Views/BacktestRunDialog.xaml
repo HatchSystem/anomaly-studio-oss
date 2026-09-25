@@ -1,0 +1,18 @@
+<ContentDialog x:Class="AnomalyStudio.Views.BacktestRunDialog"
+               xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+               Style="{StaticResource DefaultContentDialogStyle}"
+               Title="バックテスト実行中"
+               CloseButtonText="キャンセル">
+  <!-- 10a/10b バックテスト実行中: 条件・確定プログレスバー（進捗%・処理中の期間・残り時間）・キャンセル -->
+  <StackPanel Width="392" Spacing="10">
+    <TextBlock Text="{x:Bind ViewModel.RunCondition, Mode=OneWay}" Style="{StaticResource AsCaptionTextStyle}" FontSize="13" />
+    <Grid Margin="0,12,0,0">
+      <TextBlock Text="{x:Bind ViewModel.RunStep, Mode=OneWay}" Style="{StaticResource AsBodyTextStyle}" FontSize="13" />
+      <TextBlock Text="{x:Bind ViewModel.RunPercentLabel, Mode=OneWay}" Style="{StaticResource AsBodyTextStyle}" FontSize="13"
+                 HorizontalAlignment="Right" />
+    </Grid>
+    <ProgressBar Minimum="0" Maximum="100" Value="{x:Bind ViewModel.RunPercent, Mode=OneWay}" />
+    <TextBlock Text="{x:Bind ViewModel.RunEta, Mode=OneWay}" Style="{StaticResource AsCaptionTextStyle}" />
+  </StackPanel>
+</ContentDialog>

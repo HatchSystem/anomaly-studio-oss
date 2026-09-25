@@ -1,0 +1,19 @@
+<UserControl x:Class="AnomalyStudio.Controls.RailButton"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- 左ナビゲーションレールの項目: 選択中は背景 + 左端 3px のアクセントインジケーター -->
+  <Button x:Name="PART_Button" Style="{StaticResource AsSubtleButtonStyle}" Padding="0"
+          HorizontalAlignment="Center" Click="OnClick">
+    <Grid Width="40" Height="36">
+      <Border x:Name="PART_Selection" CornerRadius="4" Opacity="0"
+              Background="{ThemeResource AsNavSelectedBrush}" />
+      <Rectangle x:Name="PART_Indicator" Width="3" Height="16" RadiusX="1.5" RadiusY="1.5"
+                 HorizontalAlignment="Left" Visibility="Collapsed"
+                 Fill="{ThemeResource AsAccentBrush}" />
+      <TextBlock x:Name="PART_Icon" Style="{StaticResource AsIconStyle}" FontSize="18" />
+      <TextBlock x:Name="PART_IconSelected" Style="{StaticResource AsIconStyle}" FontSize="18"
+                 FontFamily="{StaticResource AsIconFillFontFamily}"
+                 Foreground="{ThemeResource AsAccentBrush}" Visibility="Collapsed" />
+    </Grid>
+  </Button>
+</UserControl>

@@ -1,0 +1,14 @@
+<Project ToolsVersion="15.0">
+  <!--
+    To update the version of Uno, you should instead update the Sdk version in the global.json file.
+
+    See https://aka.platform.uno/using-uno-sdk for more information.
+    See https://aka.platform.uno/using-uno-sdk#implicit-packages for more information regarding the Implicit Packages.
+  -->
+  <ItemGroup>
+    <!-- 分析データベース（組み込み、ネイティブライブラリ同梱） -->
+    <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.5.5" />
+    <!-- アプリの更新（GitHub Releases から差分更新。Windows / macOS）。リリースの CI の vpk も同じ版にする -->
+    <PackageVersion Include="Velopack" Version="1.2.158" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,106 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    AnomalyStudio Fluent 2 デザイントークン（Claude Design「AnomalyStudio Fluent 2」より）
+    Light: Mica #EEF0F4 / Layer #F9F9F9 / Card #FFFFFF / Accent #0F6CBD
+    Dark : Mica #202020 / Layer #282828 / Card #2D2D2D / Accent #479EF5
+  -->
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Light">
+      <!-- Fluent のアクセントを上書き（ToggleSwitch / RadioButton / AccentButton など） -->
+      <Color x:Key="SystemAccentColor">#0F6CBD</Color>
+      <Color x:Key="SystemAccentColorLight1">#2886DE</Color>
+      <Color x:Key="SystemAccentColorLight2">#479EF5</Color>
+      <Color x:Key="SystemAccentColorLight3">#62ABF5</Color>
+      <Color x:Key="SystemAccentColorDark1">#0F6CBD</Color>
+      <Color x:Key="SystemAccentColorDark2">#0F548C</Color>
+      <Color x:Key="SystemAccentColorDark3">#0C3B5E</Color>
+
+      <Color x:Key="AsAccentColor">#0F6CBD</Color>
+      <SolidColorBrush x:Key="AsMicaBrush" Color="#EEF0F4" />
+      <SolidColorBrush x:Key="AsLayerBrush" Color="#F9F9F9" />
+      <SolidColorBrush x:Key="AsCardBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="AsCardHoverBrush" Color="#FAFAFA" />
+      <SolidColorBrush x:Key="AsSubtleFillBrush" Color="#0A000000" />
+      <SolidColorBrush x:Key="AsSubtleFillHoverBrush" Color="#0F000000" />
+      <SolidColorBrush x:Key="AsNavSelectedBrush" Color="#E5E7EB" />
+      <SolidColorBrush x:Key="AsStrokeBrush" Color="#0F000000" />
+      <SolidColorBrush x:Key="AsStrokeStrongBrush" Color="#24000000" />
+      <SolidColorBrush x:Key="AsDividerBrush" Color="#14000000" />
+      <SolidColorBrush x:Key="AsZebraBrush" Color="#FAFAFA" />
+      <SolidColorBrush x:Key="AsRowSelectedBrush" Color="#EBF3FC" />
+      <SolidColorBrush x:Key="AsGroupHeaderBrush" Color="#F5F5F5" />
+      <SolidColorBrush x:Key="AsFooterBrush" Color="#F3F3F3" />
+
+      <SolidColorBrush x:Key="AsTextPrimaryBrush" Color="#1A1A1A" />
+      <SolidColorBrush x:Key="AsTextSecondaryBrush" Color="#616161" />
+      <SolidColorBrush x:Key="AsTextTertiaryBrush" Color="#8A8A8A" />
+      <SolidColorBrush x:Key="AsTextDisabledBrush" Color="#BDBDBD" />
+      <SolidColorBrush x:Key="AsTextOnAccentBrush" Color="#FFFFFF" />
+
+      <SolidColorBrush x:Key="AsAccentBrush" Color="#0F6CBD" />
+      <SolidColorBrush x:Key="AsAccentHoverBrush" Color="#115EA3" />
+      <SolidColorBrush x:Key="AsAccentSubtleBrush" Color="#CFE4FA" />
+      <SolidColorBrush x:Key="AsTrackBrush" Color="#E0E0E0" />
+      <SolidColorBrush x:Key="AsStarOffBrush" Color="#D1D1D1" />
+
+      <SolidColorBrush x:Key="AsPositiveBrush" Color="#0E700E" />
+      <SolidColorBrush x:Key="AsPositiveBackgroundBrush" Color="#DFF6DD" />
+      <SolidColorBrush x:Key="AsNegativeBrush" Color="#B10E1C" />
+      <SolidColorBrush x:Key="AsNegativeBackgroundBrush" Color="#FDE7E9" />
+
+      <SolidColorBrush x:Key="AsAvatarBrush" Color="#CFE4FA" />
+      <SolidColorBrush x:Key="AsAvatarTextBrush" Color="#0F548C" />
+      <SolidColorBrush x:Key="AsSmokeBrush" Color="#4D000000" />
+      <SolidColorBrush x:Key="AsCodeBackgroundBrush" Color="#FFFFFF" />
+    </ResourceDictionary>
+
+    <ResourceDictionary x:Key="Dark">
+      <Color x:Key="SystemAccentColor">#479EF5</Color>
+      <Color x:Key="SystemAccentColorLight1">#62ABF5</Color>
+      <Color x:Key="SystemAccentColorLight2">#479EF5</Color>
+      <Color x:Key="SystemAccentColorLight3">#96C6FA</Color>
+      <Color x:Key="SystemAccentColorDark1">#2886DE</Color>
+      <Color x:Key="SystemAccentColorDark2">#0F6CBD</Color>
+      <Color x:Key="SystemAccentColorDark3">#0F548C</Color>
+
+      <Color x:Key="AsAccentColor">#479EF5</Color>
+      <SolidColorBrush x:Key="AsMicaBrush" Color="#202020" />
+      <SolidColorBrush x:Key="AsLayerBrush" Color="#282828" />
+      <SolidColorBrush x:Key="AsCardBrush" Color="#2D2D2D" />
+      <SolidColorBrush x:Key="AsCardHoverBrush" Color="#323232" />
+      <SolidColorBrush x:Key="AsSubtleFillBrush" Color="#0FFFFFFF" />
+      <SolidColorBrush x:Key="AsSubtleFillHoverBrush" Color="#15FFFFFF" />
+      <SolidColorBrush x:Key="AsNavSelectedBrush" Color="#2D2D2D" />
+      <SolidColorBrush x:Key="AsStrokeBrush" Color="#12FFFFFF" />
+      <SolidColorBrush x:Key="AsStrokeStrongBrush" Color="#1AFFFFFF" />
+      <SolidColorBrush x:Key="AsDividerBrush" Color="#12FFFFFF" />
+      <SolidColorBrush x:Key="AsZebraBrush" Color="#2A2A2A" />
+      <SolidColorBrush x:Key="AsRowSelectedBrush" Color="#1F3246" />
+      <SolidColorBrush x:Key="AsGroupHeaderBrush" Color="#333333" />
+      <SolidColorBrush x:Key="AsFooterBrush" Color="#262626" />
+
+      <SolidColorBrush x:Key="AsTextPrimaryBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="AsTextSecondaryBrush" Color="#ADADAD" />
+      <SolidColorBrush x:Key="AsTextTertiaryBrush" Color="#9E9E9E" />
+      <SolidColorBrush x:Key="AsTextDisabledBrush" Color="#5C5C5C" />
+      <SolidColorBrush x:Key="AsTextOnAccentBrush" Color="#0A0A0A" />
+
+      <SolidColorBrush x:Key="AsAccentBrush" Color="#479EF5" />
+      <SolidColorBrush x:Key="AsAccentHoverBrush" Color="#62ABF5" />
+      <SolidColorBrush x:Key="AsAccentSubtleBrush" Color="#0E4775" />
+      <SolidColorBrush x:Key="AsTrackBrush" Color="#3D3D3D" />
+      <SolidColorBrush x:Key="AsStarOffBrush" Color="#5C5C5C" />
+
+      <SolidColorBrush x:Key="AsPositiveBrush" Color="#54B054" />
+      <SolidColorBrush x:Key="AsPositiveBackgroundBrush" Color="#052505" />
+      <SolidColorBrush x:Key="AsNegativeBrush" Color="#DC626D" />
+      <SolidColorBrush x:Key="AsNegativeBackgroundBrush" Color="#3F1011" />
+
+      <SolidColorBrush x:Key="AsAvatarBrush" Color="#0E4775" />
+      <SolidColorBrush x:Key="AsAvatarTextBrush" Color="#B4D6FA" />
+      <SolidColorBrush x:Key="AsSmokeBrush" Color="#80000000" />
+      <SolidColorBrush x:Key="AsCodeBackgroundBrush" Color="#2D2D2D" />
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>
