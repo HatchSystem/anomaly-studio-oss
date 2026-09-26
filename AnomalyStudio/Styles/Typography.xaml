@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-  <!-- 書体: Yu Gothic UI（欧文は Segoe UI 系、日本語のウェイトが揃う）。時計の数字は Segoe UI Variable Display、等幅は Cascadia Mono -->
+  <!-- 書体: Yu Gothic UI（欧文は Segoe UI 系、日本語のウェイトが揃う）。時計の数字は Segoe UI Variable Display、等幅は Cascadia Mono
+       Mac では起動時に Helpers/MacFonts.cs が Mac の書体と、CoreText に登録したアイコンフォントへ置き換える -->
   <FontFamily x:Key="AsFontFamily">Yu Gothic UI</FontFamily>
   <FontFamily x:Key="AsDisplayFontFamily">Yu Gothic UI</FontFamily>
   <FontFamily x:Key="AsClockFontFamily">Segoe UI Variable Display</FontFamily>

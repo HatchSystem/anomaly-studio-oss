@@ -1,5 +1,6 @@
 using AnomalyStudio.Core.Analysis;
 using AnomalyStudio.Core.Backtesting;
+using AnomalyStudio.Core.Modes;
 
 namespace AnomalyStudio.Core.Tests;
 
@@ -100,6 +101,25 @@ public sealed class StatisticsTests
         Assert.IsTrue(narrow.Count is > 0 and <= 20);
         Assert.AreEqual(0, RandomBaseline.SamplePoints(new Random(1), new PointFilter(8, 8, 10), 10).Count);
         Assert.AreEqual(0, RandomBaseline.SamplePoints(new Random(3), new PointFilter(8, 9, 10), 0).Count);
+    }
+
+    [TestMethod]
+    public void RandomBaseline_UsesTheModeHolds_WhenGiven()
+    {
+        // 勝率重視BO の保有時間から選ぶ。時間帯（8:00〜8:30）に入らない 60 分は選ばない
+        var holds = ModeDefinition.BinaryOptionHolds;
+        var rng = new Random(1);
+        var seen = new HashSet<int>();
+        for (var trial = 0; trial < 200; trial++)
+        {
+            var points = RandomBaseline.SamplePoints(rng, new PointFilter(8, 19, 10), 10, (0, CandidateGrid.MinutesPerDay), holds);
+            Assert.IsTrue(points.All(p => holds.Contains(p.HoldMinutes)));
+            seen.UnionWith(points.Select(p => p.HoldMinutes));
+        }
+
+        CollectionAssert.AreEquivalent(holds.ToArray(), seen.ToArray(), "どの保有時間も選ばれる");
+        var narrow = RandomBaseline.SamplePoints(new Random(2), new PointFilter(8, 19, 10), 5, (480, 510), holds);
+        Assert.IsTrue(narrow.Count > 0 && narrow.All(p => p.HoldMinutes <= 30 && p.EntryMinute + p.HoldMinutes <= 509));
     }
 
     [TestMethod]

@@ -382,7 +382,9 @@ public sealed partial class EntriesViewModel : ClockedViewModel
 
     public IReadOnlyList<string> SideOptions { get; } = [All, "LONG", "SHORT"];
 
-    public IReadOnlyList<string> ModeOptions { get; }
+    /// <summary>モードの選択肢（「すべて」と有効なモード）。モードの追加・名前の変更・削除・オン／オフで作り直す（<see cref="SyncModeOptions"/>）。</summary>
+    [ObservableProperty]
+    public partial IReadOnlyList<string> ModeOptions { get; set; }
 
     /// <summary>順位（銘柄 × モードごとのポイントの順位 = モードの SQL の並び）の上位 N 件に絞る。複合モードでは使わない。</summary>
     public IReadOnlyList<string> RankOptions { get; } = [All, "上位5", "上位10", "上位20", "上位30", "上位50"];
@@ -532,7 +534,8 @@ public sealed partial class EntriesViewModel : ClockedViewModel
             return;
         }
 
-        // 最適化確認・バックテストの画面で条件を変えていることがあるので、開くたびに表示を合わせる
+        // 最適化確認・バックテストの画面で条件を変えていることがあるので、開くたびに表示を合わせる。モードの選択肢も同じ
+        SyncModeOptions();
         SyncConditions();
         if (_loadedFor == (SelectedDate, LoadSource))
         {
@@ -568,7 +571,38 @@ public sealed partial class EntriesViewModel : ClockedViewModel
         await LoadWithIndicatorAsync();
     }
 
-    private async void OnWorkspaceChanged(object? sender, EventArgs e) => await LoadAsync();
+    private async void OnWorkspaceChanged(object? sender, EventArgs e)
+    {
+        SyncModeOptions();
+        await LoadAsync();
+    }
+
+    /// <summary>
+    /// モードの追加・名前の変更・削除・オン／オフを選択肢に反映する（画面を使い回すので、開くたびと分析結果・モードが変わったときに作り直す）。
+    /// 選んでいたモードは設定に覚えている名前で選び直し（名前を変えたときはモード詳細設定が書き換えている）、なくなっていれば「すべて」にする。
+    /// 表示の読み直しは呼び出し側が行う。
+    /// </summary>
+    private void SyncModeOptions()
+    {
+        string[] options = [All, .. _workspace.Modes.Enabled.Select(m => m.Name)];
+        if (options.SequenceEqual(ModeOptions))
+        {
+            return;
+        }
+
+        var preferred = _settings.EntriesMode;
+        _applying = true;
+        try
+        {
+            // 選択肢を差し替えると一覧の選択が外れることがあるので、差し替えたあとに選び直す
+            ModeOptions = options;
+            SelectedMode = options.Contains(preferred) ? preferred : All;
+        }
+        finally
+        {
+            _applying = false;
+        }
+    }
 
     /// <summary>
     /// 読み込んで一覧を差し替える。すぐ終わるときは今の一覧を出したまま差し替え、
@@ -687,7 +721,8 @@ public sealed partial class EntriesViewModel : ClockedViewModel
 
     partial void OnSelectedModeChanged(string value)
     {
-        if (_initialized)
+        // 選択肢を差し替えた瞬間に一覧が選択を外す（null）ことがある。すぐに選び直すので覚えない
+        if (_initialized && value is not null)
         {
             _settings.EntriesMode = value;
             if (!_applying)
@@ -780,7 +815,7 @@ public sealed partial class EntriesViewModel : ClockedViewModel
     private List<EntryItem> Filter(IReadOnlyList<EntryItem> items)
     {
         var weekdays = _settings.BacktestWeekdays;
-        var allowed = IsComposite ? null : SelectedPoints(items);
+        var allowed = IsComposite ? null : SelectedPoints();
         return [.. items
             .Where(i => weekdays.Contains(i.Trade.TradeDate.DayOfWeek))
             .Where(i => allowed is null || allowed.Contains(i.Info))
@@ -788,15 +823,17 @@ public sealed partial class EntriesViewModel : ClockedViewModel
             .Where(i => SelectedMode == All || i.Info.Mode.Name == SelectedMode)];
     }
 
-    /// <summary>銘柄別で使うポイント: 選んだ銘柄の、銘柄 × モードごとに時間帯に収まるポイントを順位の高い順に「順位」の件数まで。</summary>
-    private HashSet<PointInfo> SelectedPoints(IReadOnlyList<EntryItem> items)
+    /// <summary>
+    /// 銘柄別で使うポイント: 選んだ銘柄の、銘柄 × モードごとに時間帯に収まるポイントを順位の高い順に「順位」の件数まで。
+    /// 表示中の日のエントリーではなく分析結果の全ポイントから選ぶ（土曜の朝など市場が開いている時間が短い日に、
+    /// 順位の低いポイントが繰り上がって一覧に出ると、「次」の判定や他の日・バックテストと選ぶポイントが食い違うため）。
+    /// </summary>
+    private HashSet<PointInfo> SelectedPoints()
     {
         var symbols = SelectedSymbolIds.ToHashSet();
         var filter = ConditionFilter with { MaxPoints = MaxRank };
-        return [.. items
-            .Select(i => i.Info)
-            .Distinct()
-            .Where(p => symbols.Contains(p.Symbol.Id))
+        return [.. _workspace.Points
+            .Where(p => !p.IsComposite && symbols.Contains(p.Symbol.Id))
             .GroupBy(p => (p.Symbol.Id, p.Mode.Name))
             .SelectMany(g =>
             {

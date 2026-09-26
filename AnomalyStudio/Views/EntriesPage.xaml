@@ -110,7 +110,7 @@
         </ComboBox.ItemTemplate>
       </ComboBox>
       <ComboBox Style="{StaticResource FilterButtonStyle}"
-                ItemsSource="{x:Bind ViewModel.ModeOptions}" SelectedItem="{x:Bind ViewModel.SelectedMode, Mode=TwoWay}">
+                ItemsSource="{x:Bind ViewModel.ModeOptions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedMode, Mode=TwoWay}">
         <ComboBox.ItemTemplate>
           <DataTemplate x:DataType="x:String">
             <TextBlock><Run Text="モード" Foreground="{ThemeResource AsTextSecondaryBrush}" />  <Run Text="{x:Bind}" FontWeight="SemiBold" /></TextBlock>

@@ -25,6 +25,13 @@ public partial class App : Application
         // 落ちる前に原因をログへ残す（画面に出る前に終了する例外を後から追えるように）
         var logger = GetService<ILogger<App>>();
         logger.LogInformation("AnomalyStudio {Version} を起動", ProductInfo.Version);
+
+        // Mac には Typography.xaml の書体が無く、同梱のアイコンフォントも ms-appx では読めないので、画面を作る前に差し替える（Windows は何もしない）
+        if (OperatingSystem.IsMacOS())
+        {
+            MacFonts.Apply(Resources, logger);
+        }
+
         UnhandledException += (_, e) => logger.LogCritical(e.Exception, "未処理の例外: {Message}", e.Message);
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             logger.LogCritical(e.ExceptionObject as Exception, "未処理の例外（プロセスが終了します）");

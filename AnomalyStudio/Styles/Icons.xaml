@@ -39,7 +39,6 @@
   <x:String x:Key="IconDotsThree">&#xE1FE;</x:String>
   <x:String x:Key="IconDotsThreeVertical">&#xE208;</x:String>
   <x:String x:Key="IconCube">&#xE1DA;</x:String>
-  <x:String x:Key="IconUser">&#xE4C2;</x:String>
   <x:String x:Key="IconArrowsClockwise">&#xE094;</x:String>
   <x:String x:Key="IconX">&#xE4F6;</x:String>
   <x:String x:Key="IconFolder">&#xE24A;</x:String>

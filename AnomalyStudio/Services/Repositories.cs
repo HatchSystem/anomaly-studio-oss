@@ -56,14 +56,16 @@ public sealed class ModeRepository(AppPaths paths)
 
     /// <summary>
     /// 保存済みのモードを読む。廃止した既定モード（時間効率）が残っていれば取り除き、
+    /// 既定モードの SQL が以前の版の既定のままなら今の既定にし（<see cref="ModeDefinition.Upgrade"/>）、
     /// 後から追加した既定モードが無ければ無効の状態で足して（既存の抽出結果を変えない）、変わったら保存し直す。
     /// </summary>
     private static List<ModeDefinition> Load(AppPaths paths)
     {
         var items = JsonFileStore.Load(paths.ModesFile, CoreJsonContext.Default.ListModeDefinition, () => [.. ModeDefinition.Defaults]);
-        var kept = items.Where(m => !ModeDefinition.RetiredIds.Contains(m.Id)).ToList();
+        var kept = items.Where(m => !ModeDefinition.RetiredIds.Contains(m.Id)).Select(ModeDefinition.Upgrade).ToList();
+        var upgraded = kept.Any(m => !items.Contains(m));
         kept.AddRange(ModeDefinition.Defaults.Where(d => kept.All(m => m.Id != d.Id)).Select(d => d with { Enabled = false }));
-        if (kept.Count != items.Count)
+        if (kept.Count != items.Count || upgraded)
         {
             JsonFileStore.Save(paths.ModesFile, kept, CoreJsonContext.Default.ListModeDefinition);
         }
@@ -84,6 +86,24 @@ public sealed class ModeRepository(AppPaths paths)
         _items = _items.Any(m => m.Id == mode.Id)
             ? [.. _items.Select(m => m.Id == mode.Id ? mode : m)]
             : [.. _items, mode];
+        JsonFileStore.Save(paths.ModesFile, _items, CoreJsonContext.Default.ListModeDefinition);
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>自作のモードを削除する。既定モードは削除できない（オフにするか「既定に戻す」）。</summary>
+    public void Delete(string id)
+    {
+        if (Find(id) is not { } mode)
+        {
+            return;
+        }
+
+        if (mode.IsDefault)
+        {
+            throw new InvalidOperationException($"既定モード「{mode.Name}」は削除できません。");
+        }
+
+        _items = [.. _items.Where(m => m.Id != id)];
         JsonFileStore.Save(paths.ModesFile, _items, CoreJsonContext.Default.ListModeDefinition);
         Changed?.Invoke(this, EventArgs.Empty);
     }

@@ -246,8 +246,8 @@ public sealed class WalkForwardBacktester(AnalysisDatabase database)
     }
 
     /// <summary>
-    /// 基準日ごとのポイント抽出。すべてのモードが既定の SQL（<see cref="ModeDefinition.BuiltInScoreColumn"/>）なら、
-    /// 80,640 行を DuckDB に書かずに候補統計から直接選ぶ（結果は SQL と同じ。毎日サイクルの初回で最も時間がかかる部分）。
+    /// 基準日ごとのポイント抽出。すべてのモードが既定の形の SQL（<see cref="ModeDefinition.ParseBuiltIn"/>）なら、
+    /// 172,800 行を DuckDB に書かずに候補統計から直接選ぶ（結果は SQL と同じ。毎日サイクルの初回で最も時間がかかる部分）。
     /// ユーザーが編集した SQL を含むときは DuckDB で実行する。
     /// </summary>
     private async Task<IReadOnlyList<IReadOnlyList<EntryPoint>?>> SelectPointsAsync(
@@ -256,14 +256,14 @@ public sealed class WalkForwardBacktester(AnalysisDatabase database)
         var started = Stopwatch.GetTimestamp();
         try
         {
-            var columns = modes.Select(m => ModeDefinition.BuiltInScoreColumn(m.Sql)).ToArray();
-            if (columns.All(c => c is not null))
+            var selections = modes.Select(m => ModeDefinition.ParseBuiltIn(m.Sql)).ToArray();
+            if (selections.All(c => c is not null))
             {
                 // モードごとの抽出は独立なので並行して行う
                 return await Task.Run(() =>
                 {
-                    var results = new IReadOnlyList<EntryPoint>?[columns.Length];
-                    Parallel.For(0, columns.Length, k => results[k] = PointSelector.SelectBuiltIn(table, columns[k]!));
+                    var results = new IReadOnlyList<EntryPoint>?[selections.Length];
+                    Parallel.For(0, selections.Length, k => results[k] = PointSelector.SelectBuiltIn(table, selections[k]!));
                     return (IReadOnlyList<IReadOnlyList<EntryPoint>?>)results;
                 });
             }
@@ -283,11 +283,11 @@ public sealed class WalkForwardBacktester(AnalysisDatabase database)
         var started = Stopwatch.GetTimestamp();
         try
         {
-            if (ModeDefinition.BuiltInScoreColumn(mode.Sql) is { } column)
+            if (ModeDefinition.ParseBuiltIn(mode.Sql) is { } selection)
             {
                 var valueColumn = ModeSql.CompositeColumn(metric);
                 return await Task.Run(() => CompositePointSelector.Select(
-                    tables.ToDictionary(t => t.SymbolId, t => PointSelector.BuiltInCandidates(t.Table, column, valueColumn))));
+                    tables.ToDictionary(t => t.SymbolId, t => PointSelector.BuiltInCandidates(t.Table, selection, valueColumn))));
             }
 
             return await database.SelectCompositePointsWithoutSavingAsync(tables, mode.Sql, metric);

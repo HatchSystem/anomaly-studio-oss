@@ -78,7 +78,8 @@ public sealed class PointSelectorTests
         // 同スコアは Entry 昇順なので Long 08:50（保有 15 分）が 1 位、09:05 Short（保有 3 分）が 2 位
         var table = AnomalyEngine.Compute(SyntheticMarket.Build(), new EngineParameters());
         var pool = Enumerable.Range(0, CandidateGrid.Count)
-            .Where(i => !table.QualityExcluded[i] && !double.IsNaN(table.ScoreWinRate[i]) && CandidateGrid.Hold(i) <= 15)
+            .Where(i => !table.QualityExcluded[i] && !double.IsNaN(table.ScoreWinRate[i])
+                        && CandidateGrid.Hold(i) is >= PointSelector.BuiltInHoldMin and <= PointSelector.BuiltInHoldMax)
             .Select(i => new PointCandidate(CandidateGrid.Direction(i), CandidateGrid.Entry(i), CandidateGrid.Hold(i), table.ScoreWinRate[i]));
 
         var points = PointSelector.SelectNonOverlapping(PointSelector.OrderByPriority(pool));

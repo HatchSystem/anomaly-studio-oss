@@ -58,7 +58,7 @@ for (var i = 0; i < repeat; i++)
     times.Add(sw.Elapsed.TotalMilliseconds);
 }
 
-rows.Add(("analysis/compute（80,640 候補 × 4 期間）", times.Min(), $"最小 {times.Min():0} / 平均 {times.Average():0} ms（{repeat} 回、入れ物を使い回し）"));
+rows.Add(("analysis/compute（172,800 候補 × 4 期間）", times.Min(), $"最小 {times.Min():0} / 平均 {times.Average():0} ms（{repeat} 回、入れ物を使い回し）"));
 
 // 3b. うちスコア・品質除外・順位付けの部分
 var scoreTimes = new List<double>();

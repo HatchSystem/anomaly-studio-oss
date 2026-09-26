@@ -18,8 +18,8 @@ public sealed class PeriodMetrics(int days)
 }
 
 /// <summary>
-/// 80,640 候補の統計・スコア・ランキング（列指向）。NaN は「値なし」。ランキングの 0 は「対象外」。
-/// 約 35 MB あるので、連続して分析するとき（ウォークフォワード）は <see cref="AnomalyEngine.Compute"/> に渡して使い回す。
+/// 172,800 候補の統計・スコア・ランキング（列指向）。NaN は「値なし」。ランキングの 0 は「対象外」。
+/// 約 75 MB あるので、連続して分析するとき（ウォークフォワード）は <see cref="AnomalyEngine.Compute"/> に渡して使い回す。
 /// </summary>
 public sealed class CandidateTable
 {

@@ -22,6 +22,31 @@ public sealed partial class ModeDetailPage : Page
         }
     }
 
+    /// <summary>元に戻せないので、確認してから削除する。</summary>
+    private async void OnDeleteClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            RequestedTheme = ActualTheme,
+            Title = $"モード「{ViewModel.Name}」を削除しますか？",
+            Content = new TextBlock
+            {
+                Text = "モードの名前・説明・抽出 SQL を削除します。元に戻せません。\n"
+                       + "エントリー画面でこのモードを選んでいた場合は「すべて」に戻ります。保存済みの CSV・レポートは残ります。",
+                TextWrapping = TextWrapping.Wrap,
+            },
+            PrimaryButtonText = "削除する",
+            CloseButtonText = "キャンセル",
+            DefaultButton = ContentDialogButton.Close,
+        };
+
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        {
+            ViewModel.DeleteCommand.Execute(null);
+        }
+    }
+
     private async void OnAiAssistClick(object sender, RoutedEventArgs e)
     {
         var dialog = new AiAssistDialog { XamlRoot = XamlRoot, RequestedTheme = ActualTheme };

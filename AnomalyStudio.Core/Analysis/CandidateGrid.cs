@@ -7,14 +7,14 @@ public enum TradeDirection
 }
 
 /// <summary>
-/// 候補母集団: 1440 Entry 時刻 × 保有 3〜30 分 × Long/Short = 80,640 候補。
+/// 候補母集団: 1440 Entry 時刻 × 保有 1〜60 分 × Long/Short = 172,800 候補。
 /// 候補は (保有, 方向, Entry) の順に並ぶ連番で表す。
 /// </summary>
 public static class CandidateGrid
 {
     public const int MinutesPerDay = 1440;
-    public const int HoldMin = 3;
-    public const int HoldMax = 30;
+    public const int HoldMin = 1;
+    public const int HoldMax = 60;
     public const int HoldCount = HoldMax - HoldMin + 1;
     public const int Count = HoldCount * 2 * MinutesPerDay;
 

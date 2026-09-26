@@ -251,7 +251,7 @@ public sealed partial class AnomalyWorkspace : ObservableObject
         {
             ct.ThrowIfCancellationRequested();
             var (symbol, index) = (symbols[i], i);
-            BusyMessage = $"{symbol.Id}: 80,640 候補を検証中";
+            BusyMessage = $"{symbol.Id}: 172,800 候補を検証中";
             try
             {
                 await _runner.RunAsync(symbol, reportDate, new Progress<double>(f => BusyFraction = ingestWeight + ((1 - ingestWeight) * (index + f) / symbols.Count)), ct);
@@ -580,8 +580,10 @@ public sealed partial class AnomalyWorkspace : ObservableObject
     /// <summary>
     /// ランダム基準: 確定した取引と同じ取引日・件数・取引時間帯で、ポイントを無作為に選んだ場合の合計損益の分布（表示単位）。
     /// 複数の銘柄が混ざる（複合ポイント）ときは、ポイントごとに銘柄も無作為に選ぶ。取引がなければ null。
+    /// <paramref name="holds"/> はモードが限る保有時間（勝率重視BO）。null は既定の 3〜15 分。
     /// </summary>
-    public async Task<BaselineResult?> ComputeBaselineAsync(IReadOnlyList<BacktestTrade> settledTrades, PointFilter filter, CancellationToken cancellationToken)
+    public async Task<BaselineResult?> ComputeBaselineAsync(
+        IReadOnlyList<BacktestTrade> settledTrades, PointFilter filter, IReadOnlyList<int>? holds, CancellationToken cancellationToken)
     {
         var profiles = settledTrades.Select(t => t.SymbolId).Distinct()
             .Select(Symbols.Find).OfType<SymbolProfile>().ToDictionary(s => s.Id);
@@ -614,6 +616,7 @@ public sealed partial class AnomalyWorkspace : ObservableObject
                 return result.Status == TradeStatus.Settled ? profiles[symbolId].ToUnits(result.Net) : null;
             },
             actual,
+            holds: holds,
             cancellationToken: cancellationToken), cancellationToken);
     }
 

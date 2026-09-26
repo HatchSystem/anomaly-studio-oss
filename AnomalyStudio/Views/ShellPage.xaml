@@ -58,13 +58,6 @@
                              ToolTipService.ToolTip="設定"
                              SelectedKey="{x:Bind ViewModel.SelectedKey, Mode=OneWay}"
                              Command="{x:Bind ViewModel.NavigateCommand}" />
-        <!-- アカウント（ログインは未実装。ログイン後はユーザーの表示に置き換える） -->
-        <Border Width="32" Height="32" CornerRadius="16" HorizontalAlignment="Center"
-                Background="{ThemeResource AsAvatarBrush}" ToolTipService.ToolTip="ログインしていません">
-          <TextBlock Text="{StaticResource IconUser}" FontFamily="{StaticResource AsIconFontFamily}" FontSize="16"
-                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                     Foreground="{ThemeResource AsAvatarTextBrush}" />
-        </Border>
       </StackPanel>
     </Grid>
 

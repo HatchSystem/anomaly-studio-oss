@@ -18,7 +18,7 @@
         </Button>
       </Grid>
 
-      <!-- 分析: Dukascopy から取り込み、全 80,640 候補を 30/90/180/365 日で検証する -->
+      <!-- 分析: Dukascopy から取り込み、全 172,800 候補を 30/90/180/365 日で検証する -->
       <TextBlock Text="分析" Style="{StaticResource AsSectionHeaderTextStyle}" Margin="0,0,0,8" />
       <Border Style="{StaticResource AsCardStyle}" Padding="16,12" Margin="0,0,0,16">
         <StackPanel Spacing="10">
@@ -30,7 +30,7 @@
             </Grid.ColumnDefinitions>
             <StackPanel Spacing="2" VerticalAlignment="Center">
               <TextBlock Text="アノマリー分析" Style="{StaticResource AsBodyStrongTextStyle}" />
-              <TextBlock Text="今日を基準日に、直近365日の1分足で全80,640候補を検証してポイントを更新します"
+              <TextBlock Text="今日を基準日に、直近365日の1分足で全172,800候補を検証してポイントを更新します"
                          Style="{StaticResource AsCaptionTextStyle}" TextWrapping="Wrap" />
             </StackPanel>
             <Button Grid.Column="1" Content="データのみ更新" Command="{x:Bind ViewModel.UpdateDataCommand}"
@@ -118,6 +118,9 @@
                              Foreground="{ThemeResource AsTextTertiaryBrush}" />
                 </StackPanel>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                  <!-- 名前・説明・抽出 SQL の編集（自作のモードは削除、既定モードは既定に戻す）はモード詳細設定で行う -->
+                  <Button Content="編集" Margin="0,0,12,0" ToolTipService.ToolTip="名前・説明・抽出 SQL を編集"
+                          Command="{Binding ElementName=Root, Path=ViewModel.OpenCommand}" CommandParameter="{x:Bind}" />
                   <TextBlock Text="{x:Bind StateLabel, Mode=OneWay}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13" />
                   <ToggleSwitch IsOn="{x:Bind IsEnabled, Mode=TwoWay}" OnContent="" OffContent="" MinWidth="0" Width="56" />
                 </StackPanel>

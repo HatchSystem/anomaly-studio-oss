@@ -12,14 +12,15 @@ public sealed class AnomalyEngineTests
         AnomalyEngine.Compute(SyntheticMarket.Build(missing), Parameters);
 
     [TestMethod]
-    public void Grid_Has80640UniqueCandidates_AndIndexRoundTrips()
+    public void Grid_Has172800UniqueCandidates_AndIndexRoundTrips()
     {
         var indices = (
-            from hold in Enumerable.Range(3, 28)
+            from hold in Enumerable.Range(1, 60)
             from direction in new[] { TradeDirection.Long, TradeDirection.Short }
             from entry in Enumerable.Range(0, 1440)
             select CandidateGrid.Index(hold, direction, entry)).ToList();
-        Assert.HasCount(80_640, indices.Distinct());
+        Assert.HasCount(172_800, indices.Distinct());
+        Assert.AreEqual(0, indices.Min());
         Assert.AreEqual(CandidateGrid.Count - 1, indices.Max());
 
         var i = CandidateGrid.Index(17, TradeDirection.Short, 1439);
@@ -50,6 +51,25 @@ public sealed class AnomalyEngineTests
         var sigma = Math.Sqrt(30 * 0.25 / 29);
         Assert.AreEqual(sigma, p30.Sigma[i], Tolerance);
         Assert.AreEqual(p30.Total[i] / (sigma * Math.Sqrt(30)), p30.ProfitEff[i], Tolerance);
+    }
+
+    [TestMethod]
+    public void BinaryOptionHolds_CloseExactlyHoldMinutesAfterEntry()
+    {
+        // 決済は Entry の足から保有分数後の足の始値（10 分なら 08:55 → 09:05）。1 分後の足（09:06）ではない
+        var t = Compute();
+        var p30 = t.Period(30);
+        foreach (var (hold, entry) in new[] { (1, 544), (10, 535), (60, 485) })
+        {
+            var i = CandidateGrid.Index(hold, TradeDirection.Long, entry);
+            Assert.AreEqual(30, p30.Wins[i], $"{hold} 分");
+            Assert.AreEqual((15 * 1 + 15 * 2) - (30 * 0.1), p30.Total[i], Tolerance, $"{hold} 分");
+        }
+
+        // 08:56 から 10 分後は 09:06 で、跳ねた 09:05 を過ぎているので raw = 0（spread の分だけ負け）
+        var late = CandidateGrid.Index(10, TradeDirection.Long, 536);
+        Assert.AreEqual(0, p30.Wins[late]);
+        Assert.AreEqual(-30 * 0.1, p30.Total[late], Tolerance);
     }
 
     [TestMethod]

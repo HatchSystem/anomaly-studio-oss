@@ -34,7 +34,7 @@ public static partial class ModeSqlPrompt
         - run_id: 分析結果の番号。必ず `run_id = $run_id` で絞る（$run_id はアプリが置き換えるので、そのまま書く）。
         - direction: 'Long' または 'Short'。
         - entry_min: Entry 時刻を 0:00（日本時間）からの分で表す（0〜1439）。例 8:00 = 480、21:30 = 1290。
-        - hold_min: 保有時間（分、3〜30）。close_min: 決済時刻の分（0〜1439）。crosses_day: 決済が翌日になる。
+        - hold_min: 保有時間（分、1〜60）。close_min: 決済時刻の分（0〜1439）。crosses_day: 決済が翌日になる。
         - 期間ごとの列（接尾辞 _30 / _90 / _180 / _365 = 直近の日数）:
           n_ = 取引数、wins_ = 勝ち数、win_rate_ = 勝率（0〜1 の割合。60% は 0.60）、
           total_ = 合計損益、mean_ = 1 回平均損益、sigma_ = 損益の標準偏差、

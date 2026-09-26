@@ -49,8 +49,6 @@
       <SolidColorBrush x:Key="AsNegativeBrush" Color="#B10E1C" />
       <SolidColorBrush x:Key="AsNegativeBackgroundBrush" Color="#FDE7E9" />
 
-      <SolidColorBrush x:Key="AsAvatarBrush" Color="#CFE4FA" />
-      <SolidColorBrush x:Key="AsAvatarTextBrush" Color="#0F548C" />
       <SolidColorBrush x:Key="AsSmokeBrush" Color="#4D000000" />
       <SolidColorBrush x:Key="AsCodeBackgroundBrush" Color="#FFFFFF" />
     </ResourceDictionary>
@@ -97,8 +95,6 @@
       <SolidColorBrush x:Key="AsNegativeBrush" Color="#DC626D" />
       <SolidColorBrush x:Key="AsNegativeBackgroundBrush" Color="#3F1011" />
 
-      <SolidColorBrush x:Key="AsAvatarBrush" Color="#0E4775" />
-      <SolidColorBrush x:Key="AsAvatarTextBrush" Color="#B4D6FA" />
       <SolidColorBrush x:Key="AsSmokeBrush" Color="#80000000" />
       <SolidColorBrush x:Key="AsCodeBackgroundBrush" Color="#2D2D2D" />
     </ResourceDictionary>

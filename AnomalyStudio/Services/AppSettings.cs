@@ -116,7 +116,7 @@ public sealed partial class AppSettings : ObservableObject
     [ObservableProperty]
     public partial string ScheduleTime { get; set; } = "07:00";
 
-    /// <summary>銘柄ごとに保存しておく分析結果の数。画面は最新の結果しか使わないので既定は少なめ（1 件 ≈ 35 MB）。</summary>
+    /// <summary>銘柄ごとに保存しておく分析結果の数。画面は最新の結果しか使わないので既定は少なめ（1 件 ≈ 75 MB）。</summary>
     [ObservableProperty]
     public partial int RunsToKeep { get; set; } = AnalysisRunner.DefaultRunsToKeep;
 

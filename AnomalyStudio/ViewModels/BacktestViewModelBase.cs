@@ -692,7 +692,7 @@ public abstract partial class BacktestViewModelBase : ObservableObject
 
     /// <summary>
     /// ランダム基準: 同じ取引日・件数・取引時間帯で無作為に選んだポイントの成績（固定の種で 200 試行）と実績を比べる。
-    /// 80,640 候補から上位を選ぶと偶然でも良く見えるので、無作為より良いかを常に添える。計算は集計の後に非同期で行う。
+    /// 172,800 候補から上位を選ぶと偶然でも良く見えるので、無作為より良いかを常に添える。計算は集計の後に非同期で行う。
     /// </summary>
     private async Task UpdateBaselineAsync(IReadOnlyList<BacktestTrade> settled, BacktestUnits units)
     {
@@ -708,7 +708,9 @@ public abstract partial class BacktestViewModelBase : ObservableObject
         BaselineLabel = "ランダム基準を計算中…";
         try
         {
-            var result = await Workspace.ComputeBaselineAsync(settled, Filter, cts.Token);
+            // 保有時間を限るモード（勝率重視BO）は、無作為のポイントも同じ保有時間から選ぶ
+            var holds = Workspace.Modes.All.FirstOrDefault(m => m.Name == SelectedMode) is { } mode ? ModeDefinition.ParseBuiltIn(mode.Sql)?.Holds : null;
+            var result = await Workspace.ComputeBaselineAsync(settled, Filter, holds, cts.Token);
             if (cts.IsCancellationRequested || _baselineCts != cts)
             {
                 return;
