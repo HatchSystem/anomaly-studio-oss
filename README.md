@@ -1,5 +1,22 @@
 # AnomalyStudio
 
+## ダウンロード（v0.2.0）
+
+ご使用の PC に合うインストーラーを選んでください。一般的な Windows PC は **Windows x64（推奨）** です。
+
+| 対象 | ダウンロード |
+|---|---|
+| **Windows x64（推奨）** | [Windows 版をダウンロード（.exe）](https://github.com/HatchSystem/anomaly-studio-oss/releases/download/v0.2.0/HatchSystem.AnomalyStudio-win-x64-Setup.exe) |
+| Mac（Apple シリコン：M1 以降） | [Mac Apple シリコン版をダウンロード（.pkg）](https://github.com/HatchSystem/anomaly-studio-oss/releases/download/v0.2.0/HatchSystem.AnomalyStudio-osx-arm64-Setup.pkg) |
+| Mac（Intel） | [Mac Intel 版をダウンロード（.pkg）](https://github.com/HatchSystem/anomaly-studio-oss/releases/download/v0.2.0/HatchSystem.AnomalyStudio-osx-x64-Setup.pkg) |
+| Windows ARM64（ARM 対応 PC） | [Windows ARM64 版をダウンロード（.exe）](https://github.com/HatchSystem/anomaly-studio-oss/releases/download/v0.2.0/HatchSystem.AnomalyStudio-win-arm64-Setup.exe) |
+
+[導入・更新手順](docs/INSTALL.md) · [画像付き操作マニュアル](https://github.com/HatchSystem/anomaly-studio-oss/blob/main/docs/manual/README.md) · [すべての配布ファイル](https://github.com/HatchSystem/anomaly-studio-oss/releases/tag/v0.2.0)
+
+Windows ARM64 と Mac 2 種はビルドのみで、実機の動作は未検証です。
+
+## アプリについて
+
 FX のアノマリー（時間帯ごとの値動きの癖）を分析するデスクトップアプリです（Windows / macOS）。
 Dukascopy の 1 分足を取り込み、全 172,800 候補（1440 時刻 × 保有 1〜60 分 × Long/Short）を 30/90/180/365 日で検証して、モードごとにエントリーポイントを抽出します。通常の既定モードでは保有 3〜15 分を対象にします。
 ウォークフォワード・バックテストで、その時点の分析だけを使った場合の成績も確かめられます。
@@ -17,9 +34,9 @@ A desktop app (Windows / macOS) that analyzes intraday time-of-day anomalies in 
 | 種類 | ファイル | 動作確認 |
 |---|---|---|
 | Windows 10 / 11（x64） | `HatchSystem.AnomalyStudio-win-x64-Setup.exe` | 確認済み |
-| Windows 11（ARM） | `HatchSystem.AnomalyStudio-win-arm64-Setup.exe` | ビルドのみ・未検証 |
 | Mac（Apple シリコン M1 以降） | `HatchSystem.AnomalyStudio-osx-arm64-Setup.pkg` | ビルドのみ・未検証 |
 | Mac（Intel） | `HatchSystem.AnomalyStudio-osx-x64-Setup.pkg` | ビルドのみ・未検証 |
+| Windows 11（ARM） | `HatchSystem.AnomalyStudio-win-arm64-Setup.exe` | ビルドのみ・未検証 |
 
 Windows は未署名、macOS は簡易署名のみのため、インストール時に OS の警告が出る場合があります。許可の手順はマニュアルにあります。
 インストール後は、起動時に新しい版を確認して自動でダウンロードし、再起動（または次の起動）で更新します。
