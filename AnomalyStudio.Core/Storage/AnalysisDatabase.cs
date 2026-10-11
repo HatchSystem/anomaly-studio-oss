@@ -77,7 +77,8 @@ public sealed class AnalysisDatabase : IAsyncDisposable
     {
         var connection = new DuckDBConnection($"Data Source={_paths.DatabaseFile}");
         connection.Open();
-        Execute(connection, "SET memory_limit = '1GB';");
+        // 分析エンジンも CPU を並列使用するため、分析結果 DB が全コアを占有しないようにする。
+        Execute(connection, $"SET memory_limit = '1GB'; SET threads = {Math.Min(4, Environment.ProcessorCount)};");
         Execute(connection, Schema);
 
         // 時間効率（単位があり銘柄をまたいで比べられない）の列は廃止した。以前の版で作った DB からも消す
@@ -539,9 +540,9 @@ public sealed class AnalysisDatabase : IAsyncDisposable
     private const long TemporaryRunId = long.MaxValue;
 
     /// <summary>複合ポイントの候補（score は銘柄をまたいで比べられる指標のもとの値）を返す。</summary>
-    public Task<IReadOnlyList<PointCandidate>> QueryCompositeCandidatesAsync(long runId, string sql, CompositeMetric metric) => RunAsync(() =>
+    public Task<IReadOnlyList<PointCandidate>> QueryCompositeCandidatesAsync(long runId, string sql, CompositeMetric metric, int? evaluationDays = null) => RunAsync(() =>
     {
-        var statement = ModeSql.PrepareComposite(sql, runId, metric);
+        var statement = ModeSql.PrepareComposite(sql, runId, metric, evaluationDays);
         using var tx = _connection.BeginTransaction();
         var list = ReadPointCandidates(statement);
         tx.Rollback();
@@ -553,7 +554,7 @@ public sealed class AnalysisDatabase : IAsyncDisposable
     /// 銘柄ごとに一時的な run を追加してモードの SQL で候補を集め、銘柄をまたいで選んだあとロールバックする。
     /// </summary>
     public Task<IReadOnlyList<SymbolPoint>> SelectCompositePointsWithoutSavingAsync(
-        IReadOnlyList<(string SymbolId, CandidateTable Table)> tables, string sql, CompositeMetric metric, int limit = PointSelector.DefaultLimit) =>
+        IReadOnlyList<(string SymbolId, CandidateTable Table)> tables, string sql, CompositeMetric metric, int limit = PointSelector.DefaultLimit, int? evaluationDays = null) =>
         RunAsync(() =>
         {
             var candidates = new Dictionary<string, IReadOnlyList<PointCandidate>>();
@@ -564,7 +565,7 @@ public sealed class AnalysisDatabase : IAsyncDisposable
                 {
                     var runId = TemporaryRunId - i;
                     AppendCandidates(runId, tables[i].SymbolId, tables[i].Table);
-                    candidates[tables[i].SymbolId] = ReadPointCandidates(ModeSql.PrepareComposite(sql, runId, metric));
+                    candidates[tables[i].SymbolId] = ReadPointCandidates(ModeSql.PrepareComposite(sql, runId, metric, evaluationDays));
                 }
             }
             finally
@@ -631,7 +632,50 @@ public sealed class AnalysisDatabase : IAsyncDisposable
     });
 
     /// <summary>バックテスト用のポイントを保存する（同じキーは置き換え）。</summary>
-    public Task SaveBacktestPointsAsync(string symbolId, DateOnly reportDate, string cacheKey, IReadOnlyList<EntryPoint> points) => RunAsync(() =>
+    public Task SaveBacktestPointsAsync(string symbolId, DateOnly reportDate, string cacheKey, IReadOnlyList<EntryPoint> points) =>
+        RunAsync(() => SaveBacktestPoints(symbolId, reportDate, cacheKey, points));
+
+    /// <summary>
+    /// 1 基準日の複数モードのポイントを 1 トランザクションで保存する（同じキーは置き換え）。
+    /// 途中で失敗すればその日の更新を取り消す。別の基準日の確定済みポイントは残す。
+    /// </summary>
+    public Task SaveBacktestPointsBatchAsync(string symbolId, DateOnly reportDate,
+        IReadOnlyList<(string CacheKey, IReadOnlyList<EntryPoint> Points)> modes) => RunAsync(() =>
+    {
+        if (modes.Count == 0)
+        {
+            return;
+        }
+
+        // 重複キーは最後の値で置換する。ただし先の入力も変換し、不正な入力を黙って捨てない。
+        var encoded = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (cacheKey, points) in modes)
+        {
+            encoded[cacheKey] = EncodePoints(points);
+        }
+
+        using var transaction = _connection.BeginTransaction();
+        using var cmd = _connection.CreateCommand();
+        cmd.Parameters.Add(new DuckDBParameter("symbol", symbolId));
+        cmd.Parameters.Add(new DuckDBParameter("date", reportDate.ToDateTime(TimeOnly.MinValue)));
+        cmd.Parameters.Add(new DuckDBParameter("created", DateTime.UtcNow));
+        var rows = new List<string>(encoded.Count);
+        var index = 0;
+        foreach (var (key, points) in encoded)
+        {
+            // SQL に組み込むのは内部の連番だけ。キー・ポイント・銘柄はすべてパラメーターで渡す。
+            rows.Add($"($symbol, $date, $key{index}, $points{index}, $created)");
+            cmd.Parameters.Add(new DuckDBParameter($"key{index}", key));
+            cmd.Parameters.Add(new DuckDBParameter($"points{index}", points));
+            index++;
+        }
+
+        cmd.CommandText = "INSERT OR REPLACE INTO backtest_points VALUES " + string.Join(", ", rows);
+        cmd.ExecuteNonQuery();
+        transaction.Commit();
+    });
+
+    private void SaveBacktestPoints(string symbolId, DateOnly reportDate, string cacheKey, IReadOnlyList<EntryPoint> points)
     {
         using var cmd = Command("INSERT OR REPLACE INTO backtest_points VALUES ($symbol, $date, $key, $points, $created)");
         cmd.Parameters.Add(new DuckDBParameter("symbol", symbolId));
@@ -640,7 +684,7 @@ public sealed class AnalysisDatabase : IAsyncDisposable
         cmd.Parameters.Add(new DuckDBParameter("points", EncodePoints(points)));
         cmd.Parameters.Add(new DuckDBParameter("created", DateTime.UtcNow));
         cmd.ExecuteNonQuery();
-    });
+    }
 
     /// <summary>ポイントを「方向,Entry,保有,score」を ; で区切った文字列にする（順位は並び順）。</summary>
     private static string EncodePoints(IReadOnlyList<EntryPoint> points) => string.Join(';', points.Select(p => string.Join(',',
@@ -678,14 +722,56 @@ public sealed class AnalysisDatabase : IAsyncDisposable
                 continue;
             }
 
-            list.Add(new PointCandidate(
-                CandidateGrid.ParseDirection(reader.GetString(dir)),
-                Convert.ToInt32(reader.GetValue(entry), CultureInfo.InvariantCulture),
-                Convert.ToInt32(reader.GetValue(hold), CultureInfo.InvariantCulture),
-                reader.IsDBNull(score) ? double.NaN : Convert.ToDouble(reader.GetValue(score), CultureInfo.InvariantCulture)));
+            if (reader.GetValue(dir) is not string direction
+                || (!direction.Equals("Long", StringComparison.OrdinalIgnoreCase)
+                    && !direction.Equals("Short", StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new ModeSqlException("抽出 SQL の direction は Long または Short にしてください。");
+            }
+
+            try
+            {
+                list.Add(new PointCandidate(
+                    CandidateGrid.ParseDirection(direction),
+                    ReadCandidateMinute(reader.GetValue(entry), "entry_min", 0, CandidateGrid.MinutesPerDay - 1),
+                    ReadCandidateMinute(reader.GetValue(hold), "hold_min", CandidateGrid.HoldMin, CandidateGrid.HoldMax),
+                    reader.IsDBNull(score) ? double.NaN : Convert.ToDouble(reader.GetValue(score), CultureInfo.InvariantCulture)));
+            }
+            catch (Exception ex) when (ex is FormatException or InvalidCastException or OverflowException)
+            {
+                throw new ModeSqlException("抽出 SQL の entry_min・hold_min・score は数値で返してください。");
+            }
         }
 
         return list;
+    }
+
+    /// <summary>SQL の計算列も通るため、丸めずに候補の範囲内の整数であることを確かめる。</summary>
+    private static int ReadCandidateMinute(object value, string column, int min, int max)
+    {
+        if (value is decimal precise)
+        {
+            if (precise != decimal.Truncate(precise) || precise < min || precise > max)
+            {
+                throw new ModeSqlException($"抽出 SQL の {column} は {min}〜{max} の整数にしてください。");
+            }
+
+            return (int)precise;
+        }
+
+        // 文字列は従来の整数表記だけを受け付ける。浮動小数点や decimal への変換で末尾を丸めない。
+        if (value is string text)
+        {
+            value = int.Parse(text, NumberStyles.Integer, CultureInfo.InvariantCulture);
+        }
+
+        var number = Convert.ToDouble(value, CultureInfo.InvariantCulture);
+        if (!double.IsFinite(number) || number != Math.Truncate(number) || number < min || number > max)
+        {
+            throw new ModeSqlException($"抽出 SQL の {column} は {min}〜{max} の整数にしてください。");
+        }
+
+        return (int)number;
     }
 
     /// <summary>ポイントの表示用に候補統計を引く。</summary>

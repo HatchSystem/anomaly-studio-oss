@@ -1,4 +1,7 @@
 <Project ToolsVersion="15.0">
+  <PropertyGroup>
+    <UnoWin32SourceVersion>6.7.135</UnoWin32SourceVersion>
+  </PropertyGroup>
   <!--
     To update the version of Uno, you should instead update the Sdk version in the global.json file.
 
@@ -10,5 +13,27 @@
     <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.5.5" />
     <!-- アプリの更新（GitHub Releases から差分更新。Windows / macOS）。リリースの CI の vpk も同じ版にする -->
     <PackageVersion Include="Velopack" Version="1.2.158" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'AnomalyStudio.Core.Tests'">
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+  <!-- 修正版 Win32 host の上流 6.7.135 と同じコンパイル依存。アプリ側 Uno.Sdk の暗黙版とは区別する。 -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'Uno.Win32'">
+    <PackageVersion Include="Uno.Foundation" Version="$(UnoWin32SourceVersion)" />
+    <PackageVersion Include="Uno.Foundation.Logging" Version="$(UnoWin32SourceVersion)" />
+    <PackageVersion Include="Uno.WinRT" Version="$(UnoWin32SourceVersion)" />
+    <PackageVersion Include="Uno.WinUI" Version="$(UnoWin32SourceVersion)" />
+    <PackageVersion Include="Uno.WinUI.Runtime.Skia" Version="$(UnoWin32SourceVersion)" />
+    <PackageVersion Include="Uno.WinUI.Runtime.Skia.Win32" Version="$(UnoWin32SourceVersion)" />
+    <PackageVersion Include="Uno.WinUI.Graphics2DSK" Version="$(UnoWin32SourceVersion)" />
+    <PackageVersion Include="Uno.Diagnostics.Eventing" Version="2.0.1" />
+    <PackageVersion Include="SkiaSharp" Version="3.119.0" />
+    <PackageVersion Include="HarfBuzzSharp" Version="8.3.1.1" />
+    <PackageVersion Include="WebView2Aot" Version="1.5.0" />
+    <PackageVersion Include="DirectNAot" Version="1.6.1" />
+    <PackageVersion Include="DirectNAot.Extensions" Version="1.6.1" />
+    <PackageVersion Include="Microsoft.Web.WebView2" Version="1.0.2592.51" />
+    <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.3.106" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4" />
   </ItemGroup>
 </Project>

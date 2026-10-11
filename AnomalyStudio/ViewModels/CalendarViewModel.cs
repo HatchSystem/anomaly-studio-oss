@@ -52,6 +52,8 @@ public sealed partial class CalendarViewModel : ClockedViewModel
     private string _signature = string.Empty;
     private DateTime _from;
     private DateTime _to;
+    private bool _updatingCountries;
+    private string? _countrySaveError;
 
     /// <summary>
     /// 画面を開いたとき・週次／月次や期間を切り替えたときだけ、一覧を作ったあとにスクロールする
@@ -131,7 +133,7 @@ public sealed partial class CalendarViewModel : ClockedViewModel
 
     private void OnDataChanged(object? sender, EventArgs e)
     {
-        StatusText = _data.StatusText;
+        StatusText = _countrySaveError ?? _data.StatusText;
         Refresh();
     }
 
@@ -184,23 +186,51 @@ public sealed partial class CalendarViewModel : ClockedViewModel
     private void SelectAllCountries()
     {
         var target = !Countries.All(c => c.IsChecked);
-        foreach (var c in Countries)
+        _updatingCountries = true;
+        try
         {
-            c.IsChecked = target;
+            foreach (var c in Countries)
+            {
+                c.IsChecked = target;
+            }
         }
+        finally
+        {
+            _updatingCountries = false;
+        }
+
+        // 個々のチェック表示は更新し、設定保存と一覧の再生成は最終状態で 1 回だけ行う。
+        OnCountryChanged();
     }
 
     private void OnCountryChanged()
     {
+        if (_updatingCountries)
+        {
+            return;
+        }
+
         _settings.CalendarCountries.Clear();
         foreach (var c in Countries.Where(c => c.IsChecked))
         {
             _settings.CalendarCountries.Add(c.Code);
         }
 
-        _settings.NotifyCalendarFilterChanged();
         UpdateCountryLabel();
         Refresh();
+        // 保存が失敗しても、画面内のチェック・ラベル・一覧は同じ選択状態にそろえる。
+        // 次の国設定の保存が成功するまで、取得状態の更新で失敗表示を消さない。
+        try
+        {
+            _settings.NotifyCalendarFilterChanged();
+            _countrySaveError = null;
+            StatusText = _data.StatusText;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _countrySaveError = "国・地域の設定を保存できませんでした";
+            StatusText = _countrySaveError;
+        }
     }
 
     private void UpdateCountryLabel()

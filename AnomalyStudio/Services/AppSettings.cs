@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using AnomalyStudio.Core.Analysis;
+using AnomalyStudio.Core.Backtesting;
 using AnomalyStudio.Core.Storage;
 
 namespace AnomalyStudio.Services;
@@ -8,8 +9,6 @@ namespace AnomalyStudio.Services;
 public sealed class SettingsData
 {
     public string Theme { get; set; } = "ダークモード";
-    public string StartScreen { get; set; } = "最後に表示した画面";
-    public string? LastScreen { get; set; }
     public string CalendarRefresh { get; set; } = "起動時 + 毎日 06:00";
     public int CalendarMinStars { get; set; } = 3;
     public List<string> CalendarCountries { get; set; } = ["US", "JP", "EU", "GB", "DE", "AU", "CN"];
@@ -32,6 +31,8 @@ public sealed class SettingsData
     public bool EntriesComposite { get; set; }
     public string EntriesSide { get; set; } = "すべて";
     public string EntriesMode { get; set; } = "すべて";
+    public BacktestScreenState? WalkForwardConditions { get; set; }
+    public BacktestScreenState? OptimizationConditions { get; set; }
     public int BacktestStartHour { get; set; } = 8;
     public int BacktestEndHour { get; set; } = 19;
     public int BacktestMaxPoints { get; set; } = 10;
@@ -70,14 +71,8 @@ public sealed partial class AppSettings : ObservableObject
 
     public static IReadOnlyList<string> ThemeOptions { get; } = ["ライトモード", "ダークモード", "システム設定"];
 
-    public static IReadOnlyList<string> StartScreenOptions { get; } =
-        ["最後に表示した画面", "ダッシュボード", "エントリー一覧", "経済指標カレンダー", "ウォークフォワード・バックテスト", "最適化確認", "データ抽出設定", "設定"];
-
     [ObservableProperty]
     public partial string Theme { get; set; } = "ダークモード";
-
-    [ObservableProperty]
-    public partial string StartScreen { get; set; } = "最後に表示した画面";
 
     [ObservableProperty]
     public partial string CalendarRefresh { get; set; } = "起動時 + 毎日 06:00";
@@ -181,17 +176,24 @@ public sealed partial class AppSettings : ObservableObject
         }
     }
 
-    private string? _lastScreen;
+    /// <summary>画面ごとの最後の条件。null はその画面をまだ開いていない。</summary>
+    public BacktestScreenState? WalkForwardConditions { get; private set; }
+    public BacktestScreenState? OptimizationConditions { get; private set; }
 
-    /// <summary>最後に表示した画面（「起動時の画面」が既定値のときに使う）。</summary>
-    public string? LastScreen
+    public void SetBacktestConditions(bool optimization, BacktestScreenState state)
     {
-        get => _lastScreen;
-        set
+        // 呼出元の可変リストが、保存済み条件をあとから変更しないように写す。
+        state = state with { SymbolIds = state.SymbolIds.ToArray() };
+        if (optimization)
         {
-            _lastScreen = value;
-            Save();
+            OptimizationConditions = state;
         }
+        else
+        {
+            WalkForwardConditions = state;
+        }
+
+        Save();
     }
 
     public event EventHandler? CalendarFilterChanged;
@@ -208,9 +210,6 @@ public sealed partial class AppSettings : ObservableObject
     {
         _loading = true;
         Theme = d.Theme;
-        // 旧版の「バックテスト」はウォークフォワード・バックテスト（同じ画面キー）に読み替える
-        StartScreen = d.StartScreen == "バックテスト" ? "ウォークフォワード・バックテスト" : d.StartScreen;
-        _lastScreen = d.LastScreen;
         CalendarRefresh = d.CalendarRefresh;
         CalendarMinStars = Math.Clamp(d.CalendarMinStars, 0, 5);
         CalendarCountries.Clear();
@@ -235,6 +234,8 @@ public sealed partial class AppSettings : ObservableObject
             };
         EntriesSide = d.EntriesSide;
         EntriesMode = d.EntriesMode;
+        WalkForwardConditions = d.WalkForwardConditions;
+        OptimizationConditions = d.OptimizationConditions;
         BacktestStartHour = Math.Clamp(d.BacktestStartHour, 0, 23);
         BacktestEndHour = Math.Clamp(d.BacktestEndHour, BacktestStartHour + 1, 24);
         BacktestMaxPoints = Math.Clamp(d.BacktestMaxPoints, 1, PointSelector.DefaultLimit);
@@ -252,8 +253,6 @@ public sealed partial class AppSettings : ObservableObject
     private SettingsData ToData() => new()
     {
         Theme = Theme,
-        StartScreen = StartScreen,
-        LastScreen = _lastScreen,
         CalendarRefresh = CalendarRefresh,
         CalendarMinStars = CalendarMinStars,
         CalendarCountries = [.. CalendarCountries.Order()],
@@ -270,6 +269,8 @@ public sealed partial class AppSettings : ObservableObject
         EntriesComposite = EntriesComposite,
         EntriesSide = EntriesSide,
         EntriesMode = EntriesMode,
+        WalkForwardConditions = WalkForwardConditions,
+        OptimizationConditions = OptimizationConditions,
         BacktestStartHour = BacktestStartHour,
         BacktestEndHour = BacktestEndHour,
         BacktestMaxPoints = BacktestMaxPoints,

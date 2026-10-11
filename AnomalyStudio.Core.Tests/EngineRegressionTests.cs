@@ -79,6 +79,61 @@ public sealed class EngineRegressionTests
     }
 
     [TestMethod]
+    public void PooledScratch_MatchesReference_WhenPeriodsAndMissingDataChange()
+    {
+        CandidateTable? reuse = null;
+        foreach (var maxPeriod in new[] { 17, 65, 17 })
+        {
+            var parameters = new EngineParameters { Periods = [3, 7, maxPeriod], ScorePeriods = [3, 7, maxPeriod] };
+            var firstDay = SyntheticMarket.ReportDate.AddDays(-maxPeriod);
+            var quotes = RandomMarket.Quotes(firstDay, maxPeriod + 1, seed: maxPeriod);
+            var matrix = PriceMatrix.Build(SyntheticMarket.ReportDate, maxPeriod, quotes);
+            reuse = AnomalyEngine.Compute(matrix, parameters, reuse: reuse);
+            AssertSame(ReferenceEngine.Compute(matrix, parameters), reuse);
+
+            // 直前の計算値がプールや統計の入れ物に残っていても、全欠損の結果に混ざらない。
+            var missing = new PriceMatrix(firstDay, maxPeriod + 1);
+            var sameTable = AnomalyEngine.Compute(missing, parameters, reuse: reuse);
+            Assert.AreSame(reuse, sameTable);
+            AssertSame(ReferenceEngine.Compute(missing, parameters), sameTable);
+        }
+    }
+
+    [TestMethod]
+    public void PooledRanking_UsesOnlyTheValidCount_WhenCoverageChanges()
+    {
+        var scores = Enumerable.Range(0, 65).Select(i => (double)(i % 5)).ToArray();
+        var excluded = new bool[scores.Length];
+        var ranks = new int[scores.Length];
+        for (var pass = 0; pass < 3; pass++)
+        {
+            Array.Clear(excluded);
+            scores[1] = 1;
+            AnomalyEngine.RankDescending(scores, excluded, ranks);
+            CollectionAssert.AreEqual(scores.Select(s => 1 + ((4 - (int)s) * 13)).ToArray(), ranks);
+
+            Array.Fill(excluded, true);
+            foreach (var i in new[] { 0, 1, 2, 3, 4, 64 })
+            {
+                excluded[i] = false;
+            }
+
+            scores[1] = double.NaN;
+            AnomalyEngine.RankDescending(scores, excluded, ranks);
+            var sparse = new int[scores.Length];
+            sparse[0] = 5;
+            sparse[2] = 4;
+            sparse[3] = 3;
+            sparse[4] = sparse[64] = 1;
+            CollectionAssert.AreEqual(sparse, ranks);
+
+            Array.Fill(excluded, true);
+            AnomalyEngine.RankDescending(scores, excluded, ranks);
+            CollectionAssert.AreEqual(new int[scores.Length], ranks);
+        }
+    }
+
+    [TestMethod]
     public void BuiltInCandidates_MatchLinqOrdering()
     {
         var matrix = PriceMatrix.Build(SyntheticMarket.ReportDate, 365, RandomMarket.Quotes(SyntheticMarket.ReportDate.AddDays(-365), 366, seed: 6));

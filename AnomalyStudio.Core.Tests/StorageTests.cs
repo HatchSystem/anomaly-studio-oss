@@ -46,6 +46,127 @@ public sealed class StorageTests
     }
 
     [TestMethod]
+    public async Task BacktestPointBatch_SavesEveryModeWithoutChangingOrderOrValues()
+    {
+        await using var db = new AnalysisDatabase(new AppPaths(_root));
+        var day = new DateOnly(2026, 9, 1);
+        EntryPoint[] points =
+        [
+            new(1, TradeDirection.Short, 900, 3, 1.0 / 3),
+            new(2, TradeDirection.Long, 540, 15, double.NaN),
+        ];
+        await db.SaveBacktestPointsBatchAsync("TEST", day, [("first", points), ("empty", []), ("third", points)]);
+
+        foreach (var key in new[] { "first", "third" })
+        {
+            var saved = (await db.GetBacktestPointsAsync("TEST", key))[day];
+            CollectionAssert.AreEqual(points, saved.ToArray());
+            Assert.AreEqual(BitConverter.DoubleToInt64Bits(points[0].Score), BitConverter.DoubleToInt64Bits(saved[0].Score));
+        }
+
+        Assert.AreEqual(0, (await db.GetBacktestPointsAsync("TEST", "empty"))[day].Count);
+    }
+
+    [TestMethod]
+    public async Task BacktestPointBatch_ReplacesOnlyTheSpecifiedDayAndKeys()
+    {
+        await using var db = new AnalysisDatabase(new AppPaths(_root));
+        var day = new DateOnly(2026, 9, 1);
+        EntryPoint[] before = [new(1, TradeDirection.Long, 540, 3, 1)];
+        EntryPoint[] after = [new(1, TradeDirection.Short, 600, 5, 2)];
+        await db.SaveBacktestPointsAsync("TEST", day.AddDays(-1), "first", before);
+        await db.SaveBacktestPointsBatchAsync("TEST", day, [("first", before), ("untouched", before)]);
+
+        await db.SaveBacktestPointsBatchAsync("TEST", day, [("first", after), ("new", after)]);
+
+        var first = await db.GetBacktestPointsAsync("TEST", "first");
+        CollectionAssert.AreEqual(before, first[day.AddDays(-1)].ToArray());
+        CollectionAssert.AreEqual(after, first[day].ToArray());
+        CollectionAssert.AreEqual(before, (await db.GetBacktestPointsAsync("TEST", "untouched"))[day].ToArray());
+        CollectionAssert.AreEqual(after, (await db.GetBacktestPointsAsync("TEST", "new"))[day].ToArray());
+    }
+
+    [TestMethod]
+    public async Task BacktestPointBatch_ConversionFailureLeavesExistingDataUnchanged()
+    {
+        await using var db = new AnalysisDatabase(new AppPaths(_root));
+        var day = new DateOnly(2026, 9, 1);
+        EntryPoint[] before = [new(1, TradeDirection.Long, 540, 3, 1)];
+        EntryPoint[] after = [new(1, TradeDirection.Short, 600, 5, 2)];
+        await db.SaveBacktestPointsAsync("TEST", day.AddDays(-1), "first", before);
+        await db.SaveBacktestPointsAsync("TEST", day, "first", before);
+
+        // 置換と新規挿入を含む入力の3モード目の変換を失敗させる。
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => db.SaveBacktestPointsBatchAsync(
+            "TEST", day, [("first", after), ("new", after), ("broken", null!)]));
+
+        var first = await db.GetBacktestPointsAsync("TEST", "first");
+        CollectionAssert.AreEqual(before, first[day].ToArray());
+        CollectionAssert.AreEqual(before, first[day.AddDays(-1)].ToArray());
+        Assert.AreEqual(0, (await db.GetBacktestPointsAsync("TEST", "new")).Count);
+        Assert.AreEqual(0, (await db.GetBacktestPointsAsync("TEST", "broken")).Count);
+
+        // ロールバック後も次の基準日を保存できる。
+        await db.SaveBacktestPointsBatchAsync("TEST", day.AddDays(1), [("first", after)]);
+        CollectionAssert.AreEqual(after, (await db.GetBacktestPointsAsync("TEST", "first"))[day.AddDays(1)].ToArray());
+    }
+
+    [TestMethod]
+    public async Task BacktestPointBatch_DuplicateKeysKeepTheLastValue()
+    {
+        await using var db = new AnalysisDatabase(new AppPaths(_root));
+        var day = new DateOnly(2026, 9, 1);
+        EntryPoint[] before = [new(1, TradeDirection.Long, 540, 3, 1)];
+        EntryPoint[] after = [new(1, TradeDirection.Short, 600, 5, 2)];
+        await db.SaveBacktestPointsBatchAsync("TEST", day, [("same", before), ("other", before), ("same", after)]);
+        CollectionAssert.AreEqual(after, (await db.GetBacktestPointsAsync("TEST", "same"))[day].ToArray());
+        CollectionAssert.AreEqual(before, (await db.GetBacktestPointsAsync("TEST", "other"))[day].ToArray());
+
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => db.SaveBacktestPointsBatchAsync(
+            "TEST", day, [("same", null!), ("same", before)]));
+        CollectionAssert.AreEqual(after, (await db.GetBacktestPointsAsync("TEST", "same"))[day].ToArray());
+    }
+
+    [TestMethod]
+    public async Task BacktestPointBatch_DatabaseFailureRollsBackAndAllowsTheNextSave()
+    {
+        var paths = new AppPaths(_root);
+        paths.EnsureCreated();
+        // 一時 DB だけに制約を付け、複数行 INSERT の最後の行を DB 内で失敗させる。
+        using (var fixture = new DuckDB.NET.Data.DuckDBConnection($"Data Source={paths.DatabaseFile}"))
+        {
+            fixture.Open();
+            using var command = fixture.CreateCommand();
+            command.CommandText = """
+                CREATE TABLE backtest_points (
+                    symbol VARCHAR NOT NULL, report_date DATE NOT NULL,
+                    cache_key VARCHAR NOT NULL CHECK (cache_key <> 'reject'),
+                    points VARCHAR NOT NULL, created_at TIMESTAMP NOT NULL,
+                    PRIMARY KEY (symbol, report_date, cache_key)
+                )
+                """;
+            command.ExecuteNonQuery();
+        }
+
+        await using var db = new AnalysisDatabase(paths);
+        var day = new DateOnly(2026, 9, 1);
+        EntryPoint[] before = [new(1, TradeDirection.Long, 540, 3, 1)];
+        EntryPoint[] after = [new(1, TradeDirection.Short, 600, 5, 2)];
+        await db.SaveBacktestPointsAsync("TEST", day, "existing", before);
+        await db.SaveBacktestPointsAsync("TEST", day.AddDays(-1), "existing", before);
+
+        await Assert.ThrowsExactlyAsync<DuckDB.NET.Data.DuckDBException>(() => db.SaveBacktestPointsBatchAsync(
+            "TEST", day, [("existing", after), ("new", after), ("reject", after)]));
+
+        var existing = await db.GetBacktestPointsAsync("TEST", "existing");
+        CollectionAssert.AreEqual(before, existing[day].ToArray());
+        CollectionAssert.AreEqual(before, existing[day.AddDays(-1)].ToArray());
+        Assert.AreEqual(0, (await db.GetBacktestPointsAsync("TEST", "new")).Count);
+        await db.SaveBacktestPointsBatchAsync("TEST", day, [("existing", after)]);
+        CollectionAssert.AreEqual(after, (await db.GetBacktestPointsAsync("TEST", "existing"))[day].ToArray());
+    }
+
+    [TestMethod]
     public async Task Run_IsSaved_AndModeSqlSelectsReferencePoints()
     {
         await using var db = new AnalysisDatabase(new AppPaths(_root));
@@ -58,7 +179,9 @@ public sealed class StorageTests
         var points = await new PointService(db).GetPointsAsync(run.RunId, ModeDefinition.Defaults[0]);
         Assert.AreEqual(50, points.Count);
         Assert.AreEqual((TradeDirection.Long, 530, 15), (points[0].Direction, points[0].EntryMinute, points[0].HoldMinutes));
-        Assert.AreEqual((TradeDirection.Short, 545, 3), (points[1].Direction, points[1].EntryMinute, points[1].HoldMinutes));
+        // SQL 抽出でも 09:05 の決済と同時刻の Short を除外し、次の非重複候補を選ぶ。
+        Assert.AreEqual((TradeDirection.Long, 0, 3), (points[1].Direction, points[1].EntryMinute, points[1].HoldMinutes));
+        Assert.IsFalse(points.Any(p => p.EntryMinute == SyntheticMarket.SpikeMinute));
 
         var summaries = await db.GetCandidateSummariesAsync(run.RunId, points.Take(1));
         Assert.AreEqual(1.0, summaries.Single().WinRateAvg, 1e-9);
@@ -235,6 +358,32 @@ public sealed class StorageTests
         Assert.AreEqual(0.8, evaluator.Evaluate(day, new EntryPoint(1, TradeDirection.Long, 540, 5, 0)).Net, 1e-9);
         Assert.AreEqual(0.3, evaluator.Evaluate(day, new EntryPoint(1, TradeDirection.Long, 540, 3, 0)).Net, 1e-9);
         Assert.AreEqual(TradeStatus.NoData, evaluator.Evaluate(day, new EntryPoint(1, TradeDirection.Long, 540, 4, 0)).Status);
+    }
+
+    [TestMethod]
+    [DataRow("'Unknown'", "540", "3")]
+    [DataRow("'Long'", "-1", "3")]
+    [DataRow("'Long'", "1440", "3")]
+    [DataRow("'Long'", "540.5", "3")]
+    [DataRow("'Long'", "CAST(540.000000000000000001 AS DECIMAL(38,18))", "3")]
+    [DataRow("'Long'", "'540.000000000000000001'", "3")]
+    [DataRow("'Long'", "'invalid'", "3")]
+    [DataRow("'Long'", "540", "0")]
+    [DataRow("'Long'", "540", "-1")]
+    [DataRow("'Long'", "540", "61")]
+    [DataRow("'Long'", "540", "3.5")]
+    [DataRow("'Long'", "540", "CAST(3.000000000000000001 AS DECIMAL(38,18))")]
+    [DataRow("'Long'", "540", "'3.000000000000000000000000000001'")]
+    public async Task ModeSql_RejectsInvalidCandidateValues(string direction, string entry, string hold)
+    {
+        await using var db = new AnalysisDatabase(new AppPaths(_root));
+        var sql = $"SELECT {direction} AS direction, {entry} AS entry_min, {hold} AS hold_min, 1 AS score";
+        await Assert.ThrowsExactlyAsync<ModeSqlException>(() => db.QueryPointCandidatesAsync(1, sql));
+
+        // 拒否した後もトランザクションが残らず、有効な候補を読み取れる。
+        var candidates = await db.QueryPointCandidatesAsync(1,
+            "SELECT 'short' AS direction, 1439 AS entry_min, 60 AS hold_min, 1 AS score");
+        Assert.AreEqual(new PointCandidate(TradeDirection.Short, 1439, 60, 1), candidates.Single());
     }
 
     [TestMethod]

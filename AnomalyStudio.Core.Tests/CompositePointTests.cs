@@ -45,6 +45,39 @@ public sealed class CompositePointTests
     }
 
     [TestMethod]
+    public void Select_CloseEqualToNextEntry_IsOverlapAcrossSymbols()
+    {
+        var candidates = new Dictionary<string, IReadOnlyList<PointCandidate>>
+        {
+            ["AAA"] = [Candidate(600, 10, 0.9)],
+            ["BBB"] = [Candidate(610, 3, 0.8), Candidate(611, 3, 0.7)],
+        };
+
+        var points = CompositePointSelector.Select(candidates);
+
+        CollectionAssert.AreEqual(
+            new[] { ("AAA", 1, 600), ("BBB", 2, 611) },
+            points.Select(p => (p.SymbolId, p.Point.Rank, p.Point.EntryMinute)).ToArray());
+    }
+
+    [TestMethod]
+    public void Select_MidnightOccupancy_IncludesCloseAcrossSymbols()
+    {
+        var candidates = new Dictionary<string, IReadOnlyList<PointCandidate>>
+        {
+            ["AAA"] = [Candidate(1435, 15, 0.9)],
+            ["BBB"] = [Candidate(2, 11, 0.8), Candidate(10, 3, 0.7), Candidate(11, 3, 0.6)],
+        };
+
+        var points = CompositePointSelector.Select(candidates);
+
+        // 23:55→翌00:10 は 0 時台も占有し、決済と同時刻の候補を除外。翌00:11 は選べる。
+        CollectionAssert.AreEqual(
+            new[] { ("AAA", 1, 1435), ("BBB", 2, 11) },
+            points.Select(p => (p.SymbolId, p.Point.Rank, p.Point.EntryMinute)).ToArray());
+    }
+
+    [TestMethod]
     public void Select_BreaksTiesBySymbolId_AndStopsAtLimit()
     {
         var candidates = new Dictionary<string, IReadOnlyList<PointCandidate>>

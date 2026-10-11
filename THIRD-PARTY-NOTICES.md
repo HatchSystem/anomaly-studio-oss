@@ -8,6 +8,7 @@ AnomalyStudio 本体は PolyForm Strict License 1.0.0 です。配布物には�
 |---|---|---|
 | .NET runtime and libraries (Microsoft.Extensions.*, System.*) | MIT | https://github.com/dotnet/runtime |
 | Uno Platform (Uno.WinUI and related packages) | Apache-2.0 | https://github.com/unoplatform/uno |
+| Uno Win32 runtime（UI Automation ABI 修正版、6.7.135 ベース） | Apache-2.0 | `third_party/Uno.Win32/NOTICE.md` |
 | SkiaSharp / HarfBuzzSharp | MIT | https://github.com/mono/SkiaSharp |
 | Skia | BSD-3-Clause | https://skia.org |
 | HarfBuzz | MIT (Old MIT) | https://github.com/harfbuzz/harfbuzz |
@@ -20,6 +21,11 @@ AnomalyStudio 本体は PolyForm Strict License 1.0.0 です。配布物には�
 The full license texts are available at the sources above and in each NuGet package. The Phosphor Icons license is also included in
 `AnomalyStudio/Assets/Fonts/Phosphor-LICENSE.txt`.
 各ライセンスの全文は上の配布元と各 NuGet パッケージにあります。Phosphor Icons の許諾表示は `AnomalyStudio/Assets/Fonts/Phosphor-LICENSE.txt` にも含めています。
+
+Win32 runtime は Uno の commit `da217df2312e9e39676880f9cb4b8d519cc297e0` を元に、
+UI Automation の構造変更通知を Windows API の引数形式へ合わせた修正版です。
+出所、変更内容、Apache-2.0 全文と元の第三者告知は `third_party/Uno.Win32/` に保存し、
+配布物にも `licenses/Uno.Win32/` として同梱します。
 
 ## External data / 外部のデータ
 

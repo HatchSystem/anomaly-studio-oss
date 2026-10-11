@@ -50,10 +50,10 @@ public static partial class ModeSql
     /// 複合ポイント用: モードの SQL を候補の絞り込みとして使い、score を銘柄をまたいで比べられる指標のもとの値に置き換える。
     /// 列名は列挙値から決まる定数なので文字列で組み立てても安全。
     /// </summary>
-    public static string PrepareComposite(string sql, long runId, CompositeMetric metric)
+    public static string PrepareComposite(string sql, long runId, CompositeMetric metric, int? evaluationDays = null)
     {
         var inner = Prepare(sql, runId);
-        var column = CompositeColumn(metric);
+        var column = CompositeColumn(metric, evaluationDays);
         var run = runId.ToString(CultureInfo.InvariantCulture);
         return $"""
             SELECT c.direction, c.entry_min, c.hold_min, c.{column} AS score
@@ -64,13 +64,16 @@ public static partial class ModeSql
             """;
     }
 
-    /// <summary>複合ポイントで銘柄をまたいで比べる指標の列名。</summary>
-    public static string CompositeColumn(CompositeMetric metric) => metric switch
+    /// <summary>複合ポイントで銘柄をまたいで比べる指標の列名。利益効率は平均または指定期間を使う。</summary>
+    public static string CompositeColumn(CompositeMetric metric, int? evaluationDays = null) => (metric, evaluationDays) switch
     {
-        CompositeMetric.WinRate => "win_rate_avg",
-        CompositeMetric.ProfitEfficiency => "profit_eff_avg",
-        CompositeMetric.WinRateLowerBound => "win_rate_lcb_avg",
-        _ => throw new ArgumentOutOfRangeException(nameof(metric)),
+        (CompositeMetric.WinRate, null) => "win_rate_avg",
+        (CompositeMetric.ProfitEfficiency, null) => "profit_eff_avg",
+        (CompositeMetric.ProfitEfficiency, 30) => "profit_eff_30",
+        (CompositeMetric.ProfitEfficiency, 90) => "profit_eff_90",
+        (CompositeMetric.ProfitEfficiency, 365) => "profit_eff_365",
+        (CompositeMetric.WinRateLowerBound, null) => "win_rate_lcb_avg",
+        _ => throw new ArgumentOutOfRangeException(evaluationDays is null ? nameof(metric) : nameof(evaluationDays), "複合ポイントの指標と評価期間の組み合わせに対応していません。"),
     };
 
     private static string StripComments(string sql) => LineComment().Replace(BlockComment().Replace(sql, " "), " ");

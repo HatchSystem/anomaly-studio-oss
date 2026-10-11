@@ -10,7 +10,7 @@
     <!-- App Identifier -->
     <ApplicationId>jp.hatchsystem.anomalystudio</ApplicationId>
     <!-- Versions: 唯一の元は git のタグ。リリースの CI が -p:VersionPrefix=0.2.0 -p:VersionSuffix=beta.1 のように渡す（開発中は下の値） -->
-    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionPrefix>0.2.0</VersionPrefix>
     <ApplicationDisplayVersion>$(VersionPrefix)</ApplicationDisplayVersion>
     <!-- 接尾辞（beta.1 など）を含む版。Uno の SDK は Version を ApplicationDisplayVersion で上書きするので自前で組み立てる -->
     <AppVersion>$(VersionPrefix)</AppVersion>
@@ -38,6 +38,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AnomalyStudio.Core\AnomalyStudio.Core.csproj" />
+    <ProjectReference Include="..\third_party\Uno.Win32\Uno.Win32.csproj" />
     <PackageReference Include="Velopack" />
   </ItemGroup>
 
@@ -49,4 +50,15 @@
     </AssemblyAttribute>
   </ItemGroup>
 
+  <!-- Uno.Sdk が暗黙参照を確定した後、公式 host DLL のみをソース版へ置き換える。
+       パッケージの build 設定・ネイティブ依存は維持し、Support DLL はソース project から供給する。 -->
+  <Target Name="UsePatchedUnoWin32Runtime" AfterTargets="UnoImplicitPackages">
+    <Error Condition="'%(PackageReference.Identity)' == 'Uno.WinUI.Runtime.Skia.Win32' and '%(PackageReference.Version)' != '$(UnoWin32SourceVersion)'"
+           Text="Uno Win32 の版が固定ソースと一致しません。third_party/Uno.Win32/README.md の更新手順を確認してください。" />
+    <ItemGroup>
+      <PackageReference Condition="'%(PackageReference.Identity)' == 'Uno.WinUI.Runtime.Skia.Win32'">
+        <ExcludeAssets>compile;runtime</ExcludeAssets>
+      </PackageReference>
+    </ItemGroup>
+  </Target>
 </Project>

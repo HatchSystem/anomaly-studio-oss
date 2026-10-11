@@ -24,18 +24,6 @@ public sealed class NavigationService
         [Settings] = typeof(SettingsPage),
     };
 
-    /// <summary>設定「起動時の画面」の選択肢と画面キーの対応。</summary>
-    public static readonly IReadOnlyDictionary<string, string> StartScreens = new Dictionary<string, string>
-    {
-        ["ダッシュボード"] = Dashboard,
-        ["エントリー一覧"] = Entries,
-        ["経済指標カレンダー"] = Calendar,
-        ["ウォークフォワード・バックテスト"] = Backtest,
-        ["最適化確認"] = OptimizationCheck,
-        ["データ抽出設定"] = Extraction,
-        ["設定"] = Settings,
-    };
-
     private Frame? _frame;
 
     public event EventHandler<string>? Navigated;

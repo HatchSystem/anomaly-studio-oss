@@ -66,6 +66,8 @@ public sealed class QuoteCache : IDisposable
             lock (_lock)
             {
                 version = _versions.GetValueOrDefault(symbolId);
+                // 初回ロード中も全件無効化の対象にする。保持済みの銘柄だけではリセットとの競合を検出できない。
+                _versions.TryAdd(symbolId, version);
                 if (_cache.TryGetValue(symbolId, out var existing))
                 {
                     var unionFrom = existing.FromUtc < fromUtc ? existing.FromUtc : fromUtc;

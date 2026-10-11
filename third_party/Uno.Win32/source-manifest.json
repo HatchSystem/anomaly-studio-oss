@@ -1,0 +1,274 @@
+{
+  "repository": "https://github.com/unoplatform/uno",
+  "commit": "da217df2312e9e39676880f9cb4b8d519cc297e0",
+  "files": [
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/AssemblyInfo.cs",
+      "gitBlobSha": "684a4b138257fc1ea2fc0435e4a6e256ac65de00"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/BannedSymbols.txt",
+      "gitBlobSha": "2fa6c49126e44735d880866e836df46f2f9b8ca7"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Uno.UI.Runtime.Skia.Win32.csproj",
+      "gitBlobSha": "4ab5a5c8f489d2f6fcdb15cc2cd74ed5d6377c48"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Accessibility/Win32Accessibility.cs",
+      "gitBlobSha": "0b41ea7374ee37fe310abdad8c194de9276ffa94"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Accessibility/Win32AccessibilityPatterns.cs",
+      "gitBlobSha": "c4380a8cde5da08b436b2952adbe8323f6ff8b3e"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Accessibility/Win32RawElementProvider.cs",
+      "gitBlobSha": "b4b2274f259eedb77c2ce31401bb81d25b6c2ac1"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Accessibility/Win32SyntheticPaneProvider.cs",
+      "gitBlobSha": "becc0231bbe206193d8a9aacbf5587616e7b01b0"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Accessibility/Win32UIAutomationInterop.cs",
+      "gitBlobSha": "603688adc448514f1d48896fea0cbdbc5cb8e2ae"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/ApplicationMode/DataTransfer/DragDrop/Win32DragDropExtension.DragEventSource.cs",
+      "gitBlobSha": "3f29bc7598975eefe97600833ab1fc5035a5a4bb"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/ApplicationMode/DataTransfer/DragDrop/Win32DragDropExtension.DragUI.cs",
+      "gitBlobSha": "e6b59491ca5628948c4e8a558ca52b5cb77b61c9"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/ApplicationMode/DataTransfer/DragDrop/Win32DragDropExtension.DropTarget.cs",
+      "gitBlobSha": "6452221e5ba80e17e228c608eb266c4f37b1b05c"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/ApplicationMode/DataTransfer/DragDrop/Win32DragDropExtension.ImageHelpers.cs",
+      "gitBlobSha": "74bc35fbdc8498e408e328979853e18f42bc54f1"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/ApplicationMode/DataTransfer/DragDrop/Win32DragDropExtension.PngHelpers.cs",
+      "gitBlobSha": "bcb88bcbca96377c0c9dceb3b6b52e99dfcd0cbd"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/ApplicationMode/DataTransfer/DragDrop/Win32DragDropExtension.cs",
+      "gitBlobSha": "3041893fb497e5ce59d9b3371cb31a374138db44"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/ApplicationMode/DataTransfer/Win32ClipboardExtension.DragDrop.cs",
+      "gitBlobSha": "1242b0c84f6023f81be9444145f532d84c1b2b84"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/ApplicationMode/DataTransfer/Win32ClipboardExtension.cs",
+      "gitBlobSha": "cd3f6a69a1bbea0ec7bcaedd75dd564ecc25c516"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/ApplicationModel/Core/Win32CoreApplicationExtension.cs",
+      "gitBlobSha": "72e3db0986572cd9a8a517063bed08e462da5bcc"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Builder/HostBuilderExtensions.cs",
+      "gitBlobSha": "3c9c5dd76a89c8236d8d63bce82b44effe4a0dea"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Builder/Win32HostBuilder.cs",
+      "gitBlobSha": "8c4ee5edf6cce771abcafa501d66f996dc561a3b"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Builder/Win32RenderingBackend.cs",
+      "gitBlobSha": "7f9d1c4482561f7ef4741d0d479d026e94d2044f"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Devices/Input/Win32WindowWrapper.Keyboard.cs",
+      "gitBlobSha": "cd8ad4c949f4030b25ae205626f1d6a7044e705d"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Devices/Input/Win32WindowWrapper.NonClientPointer.cs",
+      "gitBlobSha": "769a07b60e85e57430b084a5c7db49433c8aa600"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Devices/Input/Win32WindowWrapper.Pointers.cs",
+      "gitBlobSha": "cdb18d5c4447122f16c569953c71f38cce7cbc5f"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Graphics/Display/Win32WindowWrapper.DisplayInformation.cs",
+      "gitBlobSha": "5f673b25d7d53fdc039b65da6f7804c2e66c1c03"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Graphics/Win32NativeOpenGLWrapper.cs",
+      "gitBlobSha": "d3d14fddfbf5ff5ed7159429f8b38337ad188a23"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Helpers/Theming/Win32SystemThemeHelperExtension.cs",
+      "gitBlobSha": "6ec7e0d71408c0ab6aecabb98fc5d215df328394"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Hosting/Win32Host.cs",
+      "gitBlobSha": "65fecaefd200b0501d53a6a589edaba361d3717e"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Native/TaskBarList.cs",
+      "gitBlobSha": "0d6dcc5f5207be8b538e807603f182c0edd62b72"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Native/Win32EventLoop.cs",
+      "gitBlobSha": "ffae46f36c96ee14f44e05aa83e0b5cb69a744a8"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Native/Win32Helper.cs",
+      "gitBlobSha": "7c96eca392e94984496c2012ea85f6bc92807362"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Native/Win32NativeElementHostingExtension.cs",
+      "gitBlobSha": "bc695205d81852f12f805e1d335a0b37b0fdbd42"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Networking/Connectivity/Win32ConnectionProfileExtension.cs",
+      "gitBlobSha": "6efd422cc268fd8901a6aa3212283113abae8d7d"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Rendering/RenderSurfaceType.cs",
+      "gitBlobSha": "7024d33bf15b6e9831b5ba2e9d6945e61a0e3728"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Rendering/Win32RenderPacer.cs",
+      "gitBlobSha": "d41fb8da0b2db6fa60626f19f52e693e84eab9b4"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Rendering/Win32WindowWrapper.RenderThread.cs",
+      "gitBlobSha": "c4e29df0547172868f26961ca0472f529f9c5de9"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Rendering/Win32WindowWrapper.Rendering.IRenderer.cs",
+      "gitBlobSha": "a3667e412ae85e360f2852131e5d54c2d1e38a6c"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Rendering/Win32WindowWrapper.Rendering.OpenGl.cs",
+      "gitBlobSha": "f58eac7648860b4c03b7e6b99cbe6dacc967610d"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Rendering/Win32WindowWrapper.Rendering.Software.cs",
+      "gitBlobSha": "3e36c5adde141c5ef16421b94102622fc55914a9"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Rendering/Win32WindowWrapper.Rendering.Vulkan.cs",
+      "gitBlobSha": "30be554e99096c651875078996752fac13151cd3"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Rendering/Win32WindowWrapper.Rendering.cs",
+      "gitBlobSha": "5a87e007b5d6ebabe77cec40da4ff2ab18dcfc9b"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Storage/Pickers/SuggestedStartLocationHandler.cs",
+      "gitBlobSha": "6a583d848bbfbeb81b7ad1b1a4d7c6c7c8df2e61"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Storage/Pickers/Win32FileFolderPickerExtension.cs",
+      "gitBlobSha": "9e535cae7ea2f81c24b460d5f977ebe6b8e25cee"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Storage/Pickers/Win32FileSaverExtension.cs",
+      "gitBlobSha": "bb264e7b5c5ec323aa4cd3f1394942a587bd019a"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/System/Profile/Win32AnalyticsInfoExtension.cs",
+      "gitBlobSha": "4cb4168fa4de572807ca283de39c9355ba757b5e"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/ViewManagement/Win32ApplicationViewExtension.cs",
+      "gitBlobSha": "e761e4bd92b6a4eeaf2b2f5c289c72ac91c3763d"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/ViewManagement/Win32TextScaleFactorExtension.cs",
+      "gitBlobSha": "1d78650fe52040f6e7efb8728b3ee883373ad569"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Windowing/Win32AutoHideTaskbar.cs",
+      "gitBlobSha": "db0b9626810877df3229457aff7af3fb28ee3875"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Windowing/Win32WindowWrapper.OverlappedPresenter.cs",
+      "gitBlobSha": "5ddc3c4ecfd9b4dd9ace42f0ea1def1d2b1421c9"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Xaml/Controls/TextBox/Win32ImeCaretManager.cs",
+      "gitBlobSha": "1d0b00a09b339d6a08f828bee14672f4e89dabb0"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Xaml/Controls/TextBox/Win32ImeTextBoxExtension.cs",
+      "gitBlobSha": "5ca9b7fa1985f21177b258577a0cbe0175ee2fa0"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Xaml/Controls/TextBox/Win32TextBoxNotificationsProviderSingleton.cs",
+      "gitBlobSha": "198d776f46cc37d6e377462fc7270b51bcb9e178"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Xaml/Controls/WebView/Win32CoreWebView2EnvironmentStaticsExtension.cs",
+      "gitBlobSha": "ab397ab5198934122b95a798a40e4cb8c5f60716"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Xaml/Controls/WebView/Win32NativeAotWebView.Helpers.cs",
+      "gitBlobSha": "eedfdda2aa65251f9f9a955f9d524d547e30c86f"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Xaml/Controls/WebView/Win32NativeAotWebView.Profile.cs",
+      "gitBlobSha": "512ca92caa5360489d813f125708c6307a2a588f"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Xaml/Controls/WebView/Win32NativeAotWebView.Request.cs",
+      "gitBlobSha": "21470f3060a969403fbf82fef824fe33e57b2e79"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Xaml/Controls/WebView/Win32NativeAotWebView.Response.cs",
+      "gitBlobSha": "01e335e77918b0f2cb51366cfa0f9eecf71162a0"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Xaml/Controls/WebView/Win32NativeAotWebView.cs",
+      "gitBlobSha": "8da0e080c500ed4137a883cd80b7b31ef5968050"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Xaml/Controls/WebView/Win32NativeWebView.WebResourceRequested.cs",
+      "gitBlobSha": "c6140b875a2bb701cdf26f5cf4f03e666235a4e9"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Xaml/Controls/WebView/Win32NativeWebView.cs",
+      "gitBlobSha": "a72c6d5b7cff8c3dbd08da527960d5cd6ca6c2b8"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Xaml/Controls/WebView/Win32NativeWebViewBase.cs",
+      "gitBlobSha": "0cdd5e3c62bf70a43880d58f83b174aef8253bac"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Xaml/Controls/WebView/Win32WebView2Loader.cs",
+      "gitBlobSha": "83d82a5a855d5146329b804863e4a24eab1ffac6"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Xaml/Window/Win32NativeWindowFactoryExtension.cs",
+      "gitBlobSha": "0df297afce8bc288ecb8813e9166289209a6617f"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Xaml/Window/Win32NonClientHitTestKind.cs",
+      "gitBlobSha": "cd33b3f321d3751a0d62dcbbf3e1cdbe93e8d87a"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/UI/Xaml/Window/Win32WindowWrapper.cs",
+      "gitBlobSha": "04cce6fca2c79d2678ea0de1e9cf771088d9d55c"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/Vulkan/Win32VulkanSurfaceFactory.cs",
+      "gitBlobSha": "9c4d205024e3c8dc31c5bbc4443a72ef0701cd08"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/buildTransitive/Uno.WinUI.Runtime.Skia.Win32.props",
+      "gitBlobSha": "e6289d110499e2dd3e91593a0f24ef4b1104cd47"
+    },
+    {
+      "path": "src/Uno.UI.Runtime.Skia.Win32/buildTransitive/Uno.WinUI.Runtime.Skia.Win32.targets",
+      "gitBlobSha": "348ce9dd37ab146ff2911da0040926bc1abd0606"
+    }
+  ]
+}

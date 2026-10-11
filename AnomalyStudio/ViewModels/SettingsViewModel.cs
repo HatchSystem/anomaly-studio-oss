@@ -42,15 +42,18 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly IEconomicCalendarService _data;
     private readonly AnomalyWorkspace _workspace;
     private readonly AiSqlAssistant _ai;
+    private bool _initializing = true;
 
-    public SettingsViewModel(AppSettings settings, IEconomicCalendarService data, AnomalyWorkspace workspace, AiSqlAssistant ai, IUpdateService updates)
+    public SettingsViewModel(AppSettings settings, IEconomicCalendarService data, AnomalyWorkspace workspace, AiSqlAssistant ai, IUpdateService updates, ClockService clock)
     {
         Settings = settings;
         _data = data;
         _workspace = workspace;
         _ai = ai;
         Updates = updates;
+        Clock = clock;
         ApiKey = ai.ApiKey;
+        _initializing = false;
         UpdateConnection();
         Countries = data.GetCountries()
             .Select(c => new CountryOptionViewModel(c, settings.CalendarCountries.Contains(c.Code), OnCountryChanged))
@@ -140,6 +143,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public AppSettings Settings { get; }
 
+    /// <summary>アプリ共通の時計と Windows の時刻同期状態。</summary>
+    public ClockService Clock { get; }
+
     public IReadOnlyList<CountryOptionViewModel> Countries { get; }
 
     [RelayCommand]
@@ -165,8 +171,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     public IReadOnlyList<string> ThemeOptions => AppSettings.ThemeOptions;
-
-    public IReadOnlyList<string> StartScreenOptions => AppSettings.StartScreenOptions;
 
     public IReadOnlyList<string> CalendarRefreshOptions { get; } = ["起動時のみ", "起動時 + 毎日 06:00", "1時間ごと"];
 
@@ -243,15 +247,18 @@ public sealed partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void DeleteStoredKey()
     {
-        _ai.DeleteStoredKey();
+        var deleted = _ai.DeleteStoredKey();
         ApiKey = string.Empty;
         UpdateConnection();
-        ConnectionStatus = "保存したAPIキーを削除しました";
+        ConnectionStatus = deleted
+            ? "保存したAPIキーを削除しました"
+            : "保存したAPIキーを削除できませんでした。接続を解除しましたが、保存先には残っています。もう一度「削除」を押してください";
     }
 
     partial void OnApiKeyChanged(string value)
     {
-        if (value != _ai.ApiKey)
+        // 保存済みの値に戻した場合も、別のキーで進行中のテストを無効にする。
+        if (!_initializing)
         {
             ResetConnection();
         }
@@ -272,8 +279,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         _ai.ConnectionChanged += OnConnectionChanged;
         if (!_ai.IsConnected && _ai.ApiKey.Length > 0)
         {
+            var pending = _ai.EnsureConnectedAsync();
             ConnectionStatus = "保存したAPIキーで確認中…";
-            if (await _ai.EnsureConnectedAsync() is { } result)
+            if (await pending is { } result)
             {
                 UpdateConnection();
                 ConnectionStatus = result;
@@ -299,9 +307,12 @@ public sealed partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private async Task TestConnectionAsync()
     {
+        var pending = _ai.TestConnectionAsync(Settings.AiBaseUrl, Settings.AiModel, ApiKey);
         ConnectionStatus = "確認中…";
-        var result = await _ai.TestConnectionAsync(Settings.AiBaseUrl, Settings.AiModel, ApiKey);
-        UpdateConnection();
-        ConnectionStatus = result;
+        if (await pending is { } result)
+        {
+            UpdateConnection();
+            ConnectionStatus = result;
+        }
     }
 }

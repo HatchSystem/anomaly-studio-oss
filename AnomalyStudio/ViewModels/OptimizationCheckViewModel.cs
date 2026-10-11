@@ -8,7 +8,7 @@ namespace AnomalyStudio.ViewModels;
 /// 分析期間（基準日の直近 365 日）と重なる期間は、ポイントの選定に使ったデータそのものでの成績になる。
 /// </summary>
 public sealed partial class OptimizationCheckViewModel(AnomalyWorkspace workspace, AppSettings settings, NavigationService navigation)
-    : BacktestViewModelBase(workspace, settings)
+    : BacktestViewModelBase(workspace, settings, optimization: true)
 {
     protected override string ExportName => "optimization_check";
 
@@ -51,7 +51,7 @@ public sealed partial class OptimizationCheckViewModel(AnomalyWorkspace workspac
                 ? new BacktestComputation([], "分析結果がありません。データ抽出設定で分析を実行してください")
                 : new BacktestComputation(composite,
                     $"選んだ銘柄の最新の分析結果（{date:yyyy/MM/dd} 基準まで）から選んだ複合ポイントを過去の各日に当てはめた結果です（損益は各銘柄の表示単位で合算）。" +
-                    $"{date.AddDays(-365):yyyy/MM/dd} 〜 {date.AddDays(-1):yyyy/MM/dd} はポイントの選定に使った期間です");
+                    SelectionPeriodNotice(mode, date));
         }
 
         var run = Workspace.Statuses.FirstOrDefault(s => s.Symbol.Id == symbol.Id)?.LatestRun;
@@ -64,6 +64,12 @@ public sealed partial class OptimizationCheckViewModel(AnomalyWorkspace workspac
         var trades = await Workspace.CheckOptimizationAsync(symbol, mode, from, to);
         return new BacktestComputation(trades,
             $"{run.ReportDate:yyyy/MM/dd} 基準の分析結果（最新）のポイントを過去の各日に当てはめた結果です。" +
-            $"{run.ReportDate.AddDays(-365):yyyy/MM/dd} 〜 {run.ReportDate.AddDays(-1):yyyy/MM/dd} はポイントの選定に使った期間です");
+            SelectionPeriodNotice(mode, run.ReportDate));
     }
+
+    private static string SelectionPeriodNotice(ModeDefinition mode, DateOnly date) =>
+        mode.EffectiveEvaluationDays is { } days
+            ? $"順位付けは {date.AddDays(-days):yyyy/MM/dd} 〜 {date.AddDays(-1):yyyy/MM/dd}（{days}日）の利益効率です。" +
+              $"品質確認は {date.AddDays(-365):yyyy/MM/dd} 〜 {date.AddDays(-1):yyyy/MM/dd} を使います"
+            : $"{date.AddDays(-365):yyyy/MM/dd} 〜 {date.AddDays(-1):yyyy/MM/dd} はポイントの選定に使った期間です";
 }

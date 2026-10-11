@@ -1,4 +1,5 @@
 using AnomalyStudio.Core.Analysis;
+using AnomalyStudio.Core.Diagnostics;
 using AnomalyStudio.Core.MarketData;
 using AnomalyStudio.Core.Storage;
 using AnomalyStudio.Core.Trading;
@@ -101,6 +102,40 @@ public sealed class QuoteCacheTests
         await db.ResetAsync();
         Assert.AreEqual(0, (await cache.GetAsync("EURUSD", T0, T0.AddDays(2))).Count);
         Assert.AreEqual(4, cache.Loads);
+    }
+
+    [TestMethod]
+    public async Task InvalidateAll_DuringFirstLoad_DoesNotCacheTheOldResult()
+    {
+        await using var db = new AnalysisDatabase(new AppPaths(_root));
+        const string symbolId = "CACHEFIRST";
+        await db.SaveBarsAsync(symbolId, [Bar(T0, 100)]);
+        using var cache = new QuoteCache(db);
+        var invalidated = false;
+        void InvalidateAfterReading(TimingEvent timing)
+        {
+            if (!invalidated && timing.Category == "storage" && timing.Name == "load-quotes"
+                && timing.Detail.StartsWith(symbolId + " ", StringComparison.Ordinal))
+            {
+                // 読み込み完了からキャッシュ登録までの間に、全件リセットの通知が届く順序を再現する。
+                invalidated = true;
+                cache.Invalidate(null);
+            }
+        }
+
+        Timing.Recorded += InvalidateAfterReading;
+        try
+        {
+            Assert.AreEqual(1, (await cache.GetAsync(symbolId, T0, T0.AddDays(1))).Count);
+            Assert.IsTrue(invalidated);
+            Assert.AreEqual(0, cache.CachedQuoteCount, "無効化された初回ロードの結果は保持しない");
+            await cache.GetAsync(symbolId, T0, T0.AddDays(1));
+            Assert.AreEqual(2, cache.Loads, "次の要求で保存済みの足を読み直す");
+        }
+        finally
+        {
+            Timing.Recorded -= InvalidateAfterReading;
+        }
     }
 
     [TestMethod]

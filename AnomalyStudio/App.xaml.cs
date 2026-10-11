@@ -91,6 +91,7 @@ public partial class App : Application
             .AddSingleton<EconomicCalendarStore>()
             .AddSingleton<IEconomicCalendarService, EconomicCalendarService>()
             .AddSingleton<IUpdateService, UpdateService>()
+            .AddSingleton<AnomalyStudio.Core.Time.ISystemTimeSynchronizer, AnomalyStudio.Core.Time.WindowsTimeSynchronizer>()
             .AddSingleton<ClockService>()
             .AddSingleton<NavigationService>()
             .AddSingleton<ShellViewModel>()

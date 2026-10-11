@@ -15,12 +15,10 @@ public sealed partial class ShellViewModel : ObservableObject
     ];
 
     private readonly NavigationService _navigation;
-    private readonly AppSettings _settings;
 
-    public ShellViewModel(NavigationService navigation, AppSettings settings, IUpdateService updates)
+    public ShellViewModel(NavigationService navigation, IUpdateService updates)
     {
         _navigation = navigation;
-        _settings = settings;
         Updates = updates;
         updates.PropertyChanged += (_, e) =>
         {
@@ -33,7 +31,6 @@ public sealed partial class ShellViewModel : ObservableObject
         {
             // モード詳細はデータ抽出設定の配下として扱う
             SelectedKey = key == NavigationService.ModeDetail ? NavigationService.Extraction : key;
-            _settings.LastScreen = SelectedKey;
         };
     }
 
@@ -54,10 +51,9 @@ public sealed partial class ShellViewModel : ObservableObject
     /// <summary>画面確認用に起動画面を一時的に指定する（設定には保存しない）。</summary>
     public string? StartOverride { get; set; }
 
+    /// <summary>通常の起動は常にダッシュボード。開発用の指定も有効なメニュー画面だけを受け付ける。</summary>
     public string InitialScreen =>
-        StartOverride ?? (_settings.StartScreen == "最後に表示した画面"
-            ? _settings.LastScreen ?? NavigationService.Dashboard
-            : NavigationService.StartScreens.GetValueOrDefault(_settings.StartScreen, NavigationService.Dashboard));
+        StartOverride is { } start && MenuOrder.Contains(start) ? start : NavigationService.Dashboard;
 
     private int MenuIndex => Array.IndexOf(MenuOrder, SelectedKey);
 

@@ -22,6 +22,8 @@ public sealed partial class ModeDetailViewModel(
     }
 
     private ModeDefinition? _mode;
+    private object? _pendingSave;
+    private bool _active;
 
     [ObservableProperty]
     public partial string Title { get; set; } = "モード詳細設定";
@@ -38,6 +40,29 @@ public sealed partial class ModeDetailViewModel(
     [NotifyPropertyChangedFor(nameof(HasDefaultSqlNotice))]
     public partial string Sql { get; set; } = string.Empty;
 
+    partial void OnNameChanged(string value) => InvalidatePendingSave(edited: true);
+
+    partial void OnDescriptionChanged(string value) => InvalidatePendingSave(edited: true);
+
+    partial void OnSqlChanged(string value) => InvalidatePendingSave(edited: true);
+
+    private void InvalidatePendingSave(bool edited = false)
+    {
+        if (edited && _pendingSave is not null)
+        {
+            ErrorMessage = "検証中に内容が変わったため保存を取り消しました。もう一度保存してください";
+        }
+
+        _pendingSave = null;
+    }
+
+    /// <summary>画面を離れたあとは、検証待ちの保存や画面遷移を反映しない。</summary>
+    public void Stop()
+    {
+        _active = false;
+        InvalidatePendingSave();
+    }
+
     /// <summary>既定モードを編集しているか（削除はできず、「既定に戻す」を出す）。</summary>
     [ObservableProperty]
     public partial bool IsDefault { get; set; }
@@ -49,7 +74,7 @@ public sealed partial class ModeDetailViewModel(
     /// <summary>既定モードの SQL を既定から変えているときの注意。</summary>
     public string DefaultSqlNotice => HasDefaultSqlNotice
         ? "既定の SQL から変更しています。アプリの更新で既定の SQL が変わっても反映されず、ウォークフォワードは DuckDB を通すので遅くなります。"
-          + "複合モードの並び順は既定の指標のままです（SQL は候補の絞り込みに使います）。「既定に戻す」で元に戻せます"
+          + "複合モードの並び順はモードの評価基準（平均または指定期間）のままです（SQL は候補の絞り込みに使います）。「既定に戻す」で元に戻せます"
         : string.Empty;
 
     public bool HasDefaultSqlNotice => _mode is { IsDefault: true } mode && !(mode with { Sql = Sql }).HasDefaultSql;
@@ -64,6 +89,8 @@ public sealed partial class ModeDetailViewModel(
 
     public void Load(ModeDefinition mode)
     {
+        InvalidatePendingSave();
+        _active = true;
         // 一覧から開いたときの内容が古いことがあるので、保存済みの最新を使う
         mode = modes.Find(mode.Id) ?? mode;
         _mode = mode;
@@ -81,6 +108,8 @@ public sealed partial class ModeDetailViewModel(
     /// <summary>新規モードの入力を始める。SQL は勝率重視を雛形にし、一覧への追加は保存時に行う。</summary>
     public void LoadNew()
     {
+        InvalidatePendingSave();
+        _active = true;
         _mode = null;
         Title = "モードを追加";
         IsDefault = false;
@@ -94,6 +123,11 @@ public sealed partial class ModeDetailViewModel(
     [RelayCommand]
     private async Task SaveAsync()
     {
+        if (!_active)
+        {
+            return;
+        }
+
         ErrorMessage = string.Empty;
         if (BusyMessage() is { } busy)
         {
@@ -101,45 +135,74 @@ public sealed partial class ModeDetailViewModel(
             return;
         }
 
-        if (ModeDefinition.ValidateName(Name, modes.All, _mode?.Id) is { } nameError)
+        var (mode, name, description, sql) = (_mode, Name, Description, Sql);
+        if (ModeDefinition.ValidateName(name, modes.All, mode?.Id) is { } nameError)
         {
             ErrorMessage = nameError;
             return;
         }
 
+        var attempt = _pendingSave = new object();
         try
         {
-            ModeSql.Prepare(Sql, 0);
+            // 初回の分析前でも、文法・列名・抽出結果の必須列を DB のスキーマで確かめる。
+            await workspace.ValidateModeSqlAsync(sql);
+            if (_pendingSave != attempt)
+            {
+                return;
+            }
+
             if (workspace.HasAnalysis)
             {
-                await workspace.TestModeSqlAsync(Sql);
+                await workspace.TestModeSqlAsync(sql);
             }
+
+            if (_pendingSave != attempt)
+            {
+                return;
+            }
+
+            // 非同期の検証中に自動分析が始まった場合や、別のモードが追加された場合も保存しない。
+            if ((BusyMessage() ?? ModeDefinition.ValidateName(name, modes.All, mode?.Id)) is { } changedError)
+            {
+                ErrorMessage = changedError;
+                return;
+            }
+
+            // エントリー画面はモードを名前で覚えているので、名前を変えたら覚えている名前も変える（保存で一覧を読み直す前に）
+            if (mode is not null && mode.Name != name && settings.EntriesMode == mode.Name)
+            {
+                settings.EntriesMode = name;
+            }
+
+            // 追加したモードは既定でオフ（抽出結果を確認してから有効にする）。検証したスナップショットだけを保存する。
+            modes.Save(mode is null
+                ? new ModeDefinition
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    Name = name,
+                    Description = string.IsNullOrWhiteSpace(description) ? "説明なし" : description,
+                    Sql = sql,
+                    Enabled = false,
+                }
+                : mode with { Name = name, Description = description, Sql = sql });
+
+            navigation.GoBack();
         }
         catch (Exception ex) when (ex is ModeSqlException or DuckDB.NET.Data.DuckDBException)
         {
-            ErrorMessage = ex.Message;
-            return;
-        }
-
-        // エントリー画面はモードを名前で覚えているので、名前を変えたら覚えている名前も変える（保存で一覧を読み直す前に）
-        if (_mode is not null && _mode.Name != Name && settings.EntriesMode == _mode.Name)
-        {
-            settings.EntriesMode = Name;
-        }
-
-        // 追加したモードは既定でオフ（抽出結果を確認してから有効にする）
-        modes.Save(_mode is null
-            ? new ModeDefinition
+            if (_pendingSave == attempt)
             {
-                Id = Guid.NewGuid().ToString("N"),
-                Name = Name,
-                Description = string.IsNullOrWhiteSpace(Description) ? "説明なし" : Description,
-                Sql = Sql,
-                Enabled = false,
+                ErrorMessage = ex.Message;
             }
-            : _mode with { Name = Name, Description = Description, Sql = Sql });
-
-        navigation.GoBack();
+        }
+        finally
+        {
+            if (_pendingSave == attempt)
+            {
+                _pendingSave = null;
+            }
+        }
     }
 
     /// <summary>自作のモードを削除する（確認は画面が行う）。エントリー画面で選んでいれば「すべて」に戻す。</summary>
@@ -158,6 +221,7 @@ public sealed partial class ModeDetailViewModel(
             return;
         }
 
+        InvalidatePendingSave();
         if (settings.EntriesMode == mode.Name)
         {
             settings.EntriesMode = ModeDefinition.AllModesLabel;
@@ -186,5 +250,9 @@ public sealed partial class ModeDetailViewModel(
         workspace.IsBusy ? "取込・分析の実行中は保存・削除できません。終わってからもう一度押してください" : null;
 
     [RelayCommand]
-    private void Cancel() => navigation.GoBack();
+    private void Cancel()
+    {
+        Stop();
+        navigation.GoBack();
+    }
 }

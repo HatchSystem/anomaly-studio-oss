@@ -43,12 +43,20 @@ public sealed record ModeDefinition
     /// <summary>複合ポイントで比べる指標。null は複合ポイントの対象外（既定モードは <see cref="EffectiveCompositeMetric"/> で補う）。</summary>
     public CompositeMetric? CompositeMetric { get; init; }
 
+    /// <summary>利益効率の評価期間（日）。null は 30 / 90 / 365 日の平均、指定できる期間は 30 / 90 / 365 日。</summary>
+    public int? EvaluationDays { get; init; }
+
     /// <summary>
     /// 複合ポイントに使う指標。保存済みの modes.json に項目がない既定モードは、同じ ID の既定値を使う。
     /// </summary>
     [JsonIgnore]
     public CompositeMetric? EffectiveCompositeMetric =>
         CompositeMetric ?? Defaults.FirstOrDefault(d => d.Id == Id)?.CompositeMetric;
+
+    /// <summary>保存済みの設定に評価期間がない既定モードは、同じ ID の既定値で補う。</summary>
+    [JsonIgnore]
+    public int? EffectiveEvaluationDays =>
+        EvaluationDays ?? Defaults.FirstOrDefault(d => d.Id == Id)?.EvaluationDays;
 
     /// <summary>
     /// 廃止した既定モードの ID。保存済みの modes.json から取り除く
@@ -84,7 +92,7 @@ public sealed record ModeDefinition
     ];
 
     /// <summary>
-    /// 既定のポイント（勝率重視・勝率重視BO・利益効率）。
+    /// 既定のポイント（勝率重視・勝率重視BO・利益効率の平均と期間別）。
     /// 保存済みの modes.json に無い既定モードは、読み込み時に無効の状態で追加する（既存の抽出結果を変えないため）。
     /// </summary>
     public static IReadOnlyList<ModeDefinition> Defaults { get; } =
@@ -115,6 +123,36 @@ public sealed record ModeDefinition
             Sql = BuiltInSql("score_profit_eff"),
             Enabled = true,
             CompositeMetric = Modes.CompositeMetric.ProfitEfficiency,
+        },
+        new()
+        {
+            Id = "profit-efficiency-30",
+            Name = "利益効率（短期30日）",
+            Description = "直近30日の利益効率σ（合計 ÷ σ√n）が高い時間帯を抽出。短期はサンプル数が少ないため、平均・中期・長期の結果と比較できます",
+            Sql = BuiltInSql("profit_eff_30"),
+            Enabled = false,
+            CompositeMetric = Modes.CompositeMetric.ProfitEfficiency,
+            EvaluationDays = 30,
+        },
+        new()
+        {
+            Id = "profit-efficiency-90",
+            Name = "利益効率（中期90日）",
+            Description = "直近90日の利益効率σ（合計 ÷ σ√n）が高い時間帯を抽出",
+            Sql = BuiltInSql("profit_eff_90"),
+            Enabled = false,
+            CompositeMetric = Modes.CompositeMetric.ProfitEfficiency,
+            EvaluationDays = 90,
+        },
+        new()
+        {
+            Id = "profit-efficiency-365",
+            Name = "利益効率（長期365日）",
+            Description = "直近365日の利益効率σ（合計 ÷ σ√n）が高い時間帯を抽出",
+            Sql = BuiltInSql("profit_eff_365"),
+            Enabled = false,
+            CompositeMetric = Modes.CompositeMetric.ProfitEfficiency,
+            EvaluationDays = 365,
         },
     ];
 
@@ -196,7 +234,8 @@ public sealed record ModeDefinition
     /// この列で作った既定の SQL は、DuckDB を通さずに候補統計から直接同じ結果を選べる（<see cref="ParseBuiltIn"/>）。
     /// </summary>
     public static IReadOnlyList<string> BuiltInScoreColumns { get; } =
-        ["score_win_rate", "score_profit_eff", "score_max_profit", "win_rate_lcb_avg", "win_rate_avg", "profit_eff_avg", "max_profit_base"];
+        ["score_win_rate", "score_profit_eff", "score_max_profit", "win_rate_lcb_avg", "win_rate_avg", "profit_eff_avg", "max_profit_base",
+         "profit_eff_30", "profit_eff_90", "profit_eff_365"];
 
     /// <summary>
     /// SQL が既定の形（<see cref="BuiltInSql(string)"/>、または勝率重視BO の条件の <see cref="BinaryOption"/>。

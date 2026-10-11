@@ -3,16 +3,70 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:helpers="using:AnomalyStudio.Helpers"
       xmlns:vm="using:AnomalyStudio.ViewModels"
+      xmlns:views="using:AnomalyStudio.Views"
       Background="Transparent">
   <!-- 4a/4b 経済指標カレンダー: 週次/月次・重要度と国の絞り込み・日付グループ付き一覧・結果は予想比で↑↓ -->
   <Page.Resources>
     <!-- 列幅（ヘッダーと行で共有）: 時刻・国・経済指標・重要度・前回・予想・結果。
          最小幅で内容が収まり、余った幅は比率で配分する（書式は Helpers/GridColumns.cs） -->
     <x:String x:Key="GridLayout">64, 56, 4*:220, 1.2*:100, 1*:80, 1*:80, 1*:100</x:String>
+    <x:Double x:Key="CalendarHeaderHeight">30</x:Double>
 
     <Style x:Key="TabTextStyle" TargetType="TextBlock" BasedOn="{StaticResource AsBaseTextStyle}">
       <Setter Property="FontSize" Value="14" />
     </Style>
+    <DataTemplate x:Key="CalendarHeaderTemplate" x:DataType="vm:CalendarGroupViewModel">
+      <Grid Height="{StaticResource CalendarHeaderHeight}" Padding="12,0" Background="{ThemeResource AsGroupHeaderBrush}"
+            BorderBrush="{ThemeResource AsDividerBrush}" BorderThickness="0,0,0,1">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Text="{x:Bind Label}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="12" />
+          <Border CornerRadius="4" Padding="6,0" Height="18" VerticalAlignment="Center"
+                  Background="{ThemeResource AsAccentBrush}" Visibility="{x:Bind IsToday}">
+            <TextBlock Text="今日" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"
+                       Foreground="{ThemeResource AsTextOnAccentBrush}" />
+          </Border>
+        </StackPanel>
+      </Grid>
+    </DataTemplate>
+    <DataTemplate x:Key="CalendarRowTemplate" x:DataType="vm:CalendarRowViewModel">
+      <Grid Height="{StaticResource AsGridRowHeight}" BorderBrush="{ThemeResource AsDividerBrush}" BorderThickness="0,0,0,1">
+        <Border Background="{ThemeResource AsZebraBrush}" Visibility="{x:Bind IsOdd}" />
+        <Border Background="{ThemeResource AsRowSelectedBrush}" Visibility="{x:Bind IsNext}" />
+        <Rectangle Width="3" HorizontalAlignment="Left" Fill="{ThemeResource AsAccentBrush}" Visibility="{x:Bind IsNext}" />
+        <Grid Padding="12,0" helpers:GridColumns.Layout="{StaticResource GridLayout}">
+          <TextBlock Text="{x:Bind Time}" Style="{StaticResource AsBodyTextStyle}" FontSize="13" />
+          <Border Grid.Column="1" Style="{StaticResource AsCodeBadgeStyle}">
+            <TextBlock Text="{x:Bind Country}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"
+                       Foreground="{ThemeResource AsTextPrimaryBrush}" />
+          </Border>
+          <TextBlock Grid.Column="2" Text="{x:Bind Name}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13"
+                     Visibility="{x:Bind IsEvent}" />
+          <TextBlock Grid.Column="2" Text="{x:Bind Name}" Style="{StaticResource AsSecondaryTextStyle}" FontSize="13"
+                     Visibility="{x:Bind IsHoliday}" />
+          <TextBlock Grid.Column="3" FontSize="12" VerticalAlignment="Center">
+            <Run Text="{x:Bind StarsOn}" Foreground="{ThemeResource AsAccentBrush}" /><Run Text="{x:Bind StarsOff}" Foreground="{ThemeResource AsStarOffBrush}" />
+          </TextBlock>
+          <TextBlock Grid.Column="4" Text="{x:Bind Previous}" Style="{StaticResource AsNumberTextStyle}" FontSize="13"
+                     Foreground="{ThemeResource AsTextSecondaryBrush}" />
+          <TextBlock Grid.Column="5" Text="{x:Bind Forecast}" Style="{StaticResource AsNumberTextStyle}" FontSize="13"
+                     Foreground="{ThemeResource AsTextSecondaryBrush}" />
+          <StackPanel Grid.Column="6" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="2">
+            <TextBlock Text="{StaticResource IconArrowUp}" Style="{StaticResource AsIconStyle}" FontSize="12"
+                       Foreground="{ThemeResource AsPositiveBrush}" Visibility="{x:Bind IsUp}" />
+            <TextBlock Text="{StaticResource IconArrowDown}" Style="{StaticResource AsIconStyle}" FontSize="12"
+                       Foreground="{ThemeResource AsNegativeBrush}" Visibility="{x:Bind IsDown}" />
+            <TextBlock Text="{x:Bind Actual}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13"
+                       Foreground="{ThemeResource AsPositiveBrush}" Visibility="{x:Bind IsUp}" />
+            <TextBlock Text="{x:Bind Actual}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13"
+                       Foreground="{ThemeResource AsNegativeBrush}" Visibility="{x:Bind IsDown}" />
+            <TextBlock Text="{x:Bind Actual}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13"
+                       Visibility="{x:Bind IsFlat}" />
+          </StackPanel>
+        </Grid>
+      </Grid>
+    </DataTemplate>
+    <views:CalendarItemTemplateSelector x:Key="CalendarItemTemplate"
+        HeaderTemplate="{StaticResource CalendarHeaderTemplate}" RowTemplate="{StaticResource CalendarRowTemplate}" />
   </Page.Resources>
 
   <Grid Padding="{StaticResource AsPagePadding}" RowSpacing="12">
@@ -141,67 +195,13 @@
           <TextBlock Grid.Column="6" Text="結果" Style="{StaticResource AsGridHeaderTextStyle}" HorizontalAlignment="Right" />
         </Grid>
 
-        <ScrollViewer x:Name="EventScroll" Grid.Row="1">
-          <ItemsControl x:Name="GroupList" ItemsSource="{x:Bind ViewModel.Groups}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="vm:CalendarGroupViewModel">
-                <StackPanel>
-                  <Grid Height="30" Padding="12,0" Background="{ThemeResource AsGroupHeaderBrush}"
-                        BorderBrush="{ThemeResource AsDividerBrush}" BorderThickness="0,0,0,1">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBlock Text="{x:Bind Label}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="12" />
-                      <Border CornerRadius="4" Padding="6,0" Height="18" VerticalAlignment="Center"
-                              Background="{ThemeResource AsAccentBrush}" Visibility="{x:Bind IsToday}">
-                        <TextBlock Text="今日" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"
-                                   Foreground="{ThemeResource AsTextOnAccentBrush}" />
-                      </Border>
-                    </StackPanel>
-                  </Grid>
-                  <ItemsControl ItemsSource="{x:Bind Rows}">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate x:DataType="vm:CalendarRowViewModel">
-                        <Grid Height="32" BorderBrush="{ThemeResource AsDividerBrush}" BorderThickness="0,0,0,1">
-                          <Border Background="{ThemeResource AsZebraBrush}" Visibility="{x:Bind IsOdd}" />
-                          <Border Background="{ThemeResource AsRowSelectedBrush}" Visibility="{x:Bind IsNext}" />
-                          <Rectangle Width="3" HorizontalAlignment="Left" Fill="{ThemeResource AsAccentBrush}" Visibility="{x:Bind IsNext}" />
-                          <Grid Padding="12,0" helpers:GridColumns.Layout="{StaticResource GridLayout}">
-                            <TextBlock Text="{x:Bind Time}" Style="{StaticResource AsBodyTextStyle}" FontSize="13" />
-                            <Border Grid.Column="1" Style="{StaticResource AsCodeBadgeStyle}">
-                              <TextBlock Text="{x:Bind Country}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"
-                                         Foreground="{ThemeResource AsTextPrimaryBrush}" />
-                            </Border>
-                            <TextBlock Grid.Column="2" Text="{x:Bind Name}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13"
-                                       Visibility="{x:Bind IsEvent}" />
-                            <TextBlock Grid.Column="2" Text="{x:Bind Name}" Style="{StaticResource AsSecondaryTextStyle}" FontSize="13"
-                                       Visibility="{x:Bind IsHoliday}" />
-                            <TextBlock Grid.Column="3" FontSize="12" VerticalAlignment="Center">
-                              <Run Text="{x:Bind StarsOn}" Foreground="{ThemeResource AsAccentBrush}" /><Run Text="{x:Bind StarsOff}" Foreground="{ThemeResource AsStarOffBrush}" />
-                            </TextBlock>
-                            <TextBlock Grid.Column="4" Text="{x:Bind Previous}" Style="{StaticResource AsNumberTextStyle}" FontSize="13"
-                                       Foreground="{ThemeResource AsTextSecondaryBrush}" />
-                            <TextBlock Grid.Column="5" Text="{x:Bind Forecast}" Style="{StaticResource AsNumberTextStyle}" FontSize="13"
-                                       Foreground="{ThemeResource AsTextSecondaryBrush}" />
-                            <StackPanel Grid.Column="6" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="2">
-                              <TextBlock Text="{StaticResource IconArrowUp}" Style="{StaticResource AsIconStyle}" FontSize="12"
-                                         Foreground="{ThemeResource AsPositiveBrush}" Visibility="{x:Bind IsUp}" />
-                              <TextBlock Text="{StaticResource IconArrowDown}" Style="{StaticResource AsIconStyle}" FontSize="12"
-                                         Foreground="{ThemeResource AsNegativeBrush}" Visibility="{x:Bind IsDown}" />
-                              <TextBlock Text="{x:Bind Actual}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13"
-                                         Foreground="{ThemeResource AsPositiveBrush}" Visibility="{x:Bind IsUp}" />
-                              <TextBlock Text="{x:Bind Actual}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13"
-                                         Foreground="{ThemeResource AsNegativeBrush}" Visibility="{x:Bind IsDown}" />
-                              <TextBlock Text="{x:Bind Actual}" Style="{StaticResource AsBodyStrongTextStyle}" FontSize="13"
-                                         Visibility="{x:Bind IsFlat}" />
-                            </StackPanel>
-                          </Grid>
-                        </Grid>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                </StackPanel>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
+        <!-- 見出しと行を平坦化し、画面周辺だけを生成する。外側の ScrollViewer が表示範囲を渡す。 -->
+        <ScrollViewer x:Name="EventScroll" Grid.Row="1" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+          <ItemsRepeater x:Name="EventRepeater" ItemTemplate="{StaticResource CalendarItemTemplate}">
+            <ItemsRepeater.Layout>
+              <StackLayout Orientation="Vertical" Spacing="0" />
+            </ItemsRepeater.Layout>
+          </ItemsRepeater>
         </ScrollViewer>
 
         <TextBlock Grid.Row="1" Text="この期間に表示できる指標はありません" HorizontalAlignment="Center" Margin="0,40,0,0"

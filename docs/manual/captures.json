@@ -1,0 +1,86 @@
+{
+  "application": "AnomalyStudio",
+  "version": "0.1.0",
+  "commit": "17e72d3",
+  "dateJst": "2026-10-11",
+  "state": "市場データ・分析結果なし、JSON設定・モード・銘柄は初回既定。経済指標は自動取得。AI資格情報は既存のWindows資格情報を保持し、画面はマスク表示。",
+  "screenshots": [
+    {
+      "file": "images/01-dashboard.jpg",
+      "title": "初回起動のダッシュボード",
+      "width": 1180,
+      "height": 760,
+      "capturedAt": "2026-10-11T11:18:12.906Z"
+    },
+    {
+      "file": "images/02-entries.jpg",
+      "title": "エントリー画面の初期状態",
+      "width": 1180,
+      "height": 760,
+      "capturedAt": "2026-10-11T11:18:58.932Z"
+    },
+    {
+      "file": "images/03-calendar.jpg",
+      "title": "経済指標カレンダー",
+      "width": 1180,
+      "height": 760,
+      "capturedAt": "2026-10-11T11:19:24.665Z"
+    },
+    {
+      "file": "images/04-walk-forward.jpg",
+      "title": "ウォークフォワード・バックテストの初期状態",
+      "width": 1180,
+      "height": 760,
+      "capturedAt": "2026-10-11T11:19:44.099Z"
+    },
+    {
+      "file": "images/05-optimization.jpg",
+      "title": "最適化確認の初期状態",
+      "width": 1180,
+      "height": 760,
+      "capturedAt": "2026-10-11T11:20:05.135Z"
+    },
+    {
+      "file": "images/06-extraction.jpg",
+      "title": "データ抽出設定：データ取込と分析",
+      "width": 1180,
+      "height": 760,
+      "capturedAt": "2026-10-11T11:20:22.034Z"
+    },
+    {
+      "file": "images/07-modes.jpg",
+      "title": "既定モードと期間別利益効率",
+      "width": 1180,
+      "height": 760,
+      "capturedAt": "2026-10-11T11:20:29.223Z"
+    },
+    {
+      "file": "images/08-mode-add.jpg",
+      "title": "モード追加の入力画面（未保存）",
+      "width": 1180,
+      "height": 760,
+      "capturedAt": "2026-10-11T11:22:24.536Z"
+    },
+    {
+      "file": "images/09-settings-general.jpg",
+      "title": "設定：一般・Windows時刻同期・銘柄",
+      "width": 1180,
+      "height": 760,
+      "capturedAt": "2026-10-11T11:22:42.607Z"
+    },
+    {
+      "file": "images/10-settings-data.jpg",
+      "title": "設定：保存先・週次分析・経済指標",
+      "width": 1180,
+      "height": 760,
+      "capturedAt": "2026-10-11T11:22:59.749Z"
+    },
+    {
+      "file": "images/11-settings-ai.jpg",
+      "title": "設定：AI接続・バージョン（APIキーはマスク）",
+      "width": 1180,
+      "height": 760,
+      "capturedAt": "2026-10-11T11:23:51.925Z"
+    }
+  ]
+}

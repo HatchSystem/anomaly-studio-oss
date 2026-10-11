@@ -220,7 +220,7 @@ public sealed partial class AnomalyWorkspace : ObservableObject
         var candidates = new Dictionary<string, IReadOnlyList<PointCandidate>>();
         foreach (var status in latest)
         {
-            candidates[status.Symbol.Id] = await _database.QueryCompositeCandidatesAsync(status.LatestRun!.RunId, mode.Sql, metric);
+            candidates[status.Symbol.Id] = await _database.QueryCompositeCandidatesAsync(status.LatestRun!.RunId, mode.Sql, metric, mode.EffectiveEvaluationDays);
         }
 
         return CompositePointSelector.Select(candidates);

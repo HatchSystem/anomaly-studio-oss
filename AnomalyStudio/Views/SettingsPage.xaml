@@ -51,10 +51,24 @@
           <TextBlock Text="{StaticResource IconHouseLine}" Style="{StaticResource CardIconStyle}" />
           <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
             <TextBlock Text="起動時の画面" Style="{StaticResource AsBodyStrongTextStyle}" />
-            <TextBlock Text="アプリ起動時に最初に表示する画面" Style="{StaticResource AsCaptionTextStyle}" />
+            <TextBlock Text="起動時はダッシュボードを表示します" Style="{StaticResource AsCaptionTextStyle}" />
           </StackPanel>
-          <ComboBox Grid.Column="2" Style="{StaticResource ControlStyle}" ItemsSource="{x:Bind ViewModel.StartScreenOptions}"
-                    SelectedItem="{x:Bind ViewModel.Settings.StartScreen, Mode=TwoWay}" />
+          <TextBlock Grid.Column="2" Text="ダッシュボード" Style="{StaticResource AsBodyStrongTextStyle}" VerticalAlignment="Center" />
+        </Grid>
+      </Border>
+
+      <Border Style="{StaticResource AsSettingsCardStyle}">
+        <Grid Style="{StaticResource CardGridStyle}">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <TextBlock Text="{StaticResource IconArrowsClockwise}" Style="{StaticResource CardIconStyle}" />
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+            <TextBlock Text="時刻同期" Style="{StaticResource AsBodyStrongTextStyle}" />
+            <TextBlock Text="Windowsの時計を同期します（管理者確認が表示される場合があります）" Style="{StaticResource AsCaptionTextStyle}" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Bind ViewModel.Clock.SynchronizationStatus, Mode=OneWay}" Style="{StaticResource AsCaptionTextStyle}" TextWrapping="Wrap" />
+          </StackPanel>
+          <Button Grid.Column="2" Content="今すぐ同期" Command="{x:Bind ViewModel.Clock.SynchronizeCommand}" VerticalAlignment="Center" />
         </Grid>
       </Border>
 

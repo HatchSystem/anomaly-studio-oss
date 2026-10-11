@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 
 namespace AnomalyStudio.Core.Analysis;
@@ -18,7 +19,7 @@ namespace AnomalyStudio.Core.Analysis;
 /// </summary>
 public static class AnomalyEngine
 {
-    /// <summary>並列に処理する候補（保有 × Entry 時刻）の塊の大きさ。28 × 1440 = 40,320 を 224 個に分ける。</summary>
+    /// <summary>並列に処理する候補（保有 × Entry 時刻）の塊の大きさ。60 × 1440 = 86,400 を 480 個に分ける。</summary>
     private const int BlockSize = 180;
 
     /// <param name="reuse">前回の結果の入れ物を使い回す（期間が同じときだけ。連続して分析するときの GC 負荷を減らす）。</param>
@@ -41,9 +42,10 @@ public static class AnomalyEngine
         var done = 0;
         const int total = CandidateGrid.HoldCount * CandidateGrid.MinutesPerDay;
 
-        Parallel.ForEach(Partitioner.Create(0, total, BlockSize), range =>
+        // raw は候補ごとに先頭 maxPeriod 件を必ず上書きする。ワーカーの担当する複数の塊で使い回す。
+        Parallel.ForEach(Partitioner.Create(0, total, BlockSize),
+            () => ArrayPool<double>.Shared.Rent(maxPeriod), (range, _, raw) =>
         {
-            var raw = new double[maxPeriod];
             for (var k = range.Item1; k < range.Item2; k++)
             {
                 var hold = (k / CandidateGrid.MinutesPerDay) + CandidateGrid.HoldMin;
@@ -73,7 +75,8 @@ public static class AnomalyEngine
             }
 
             progress?.Report(Interlocked.Add(ref done, range.Item2 - range.Item1) / (double)total);
-        });
+            return raw;
+        }, raw => ArrayPool<double>.Shared.Return(raw));
 
         Score(table, parameters);
         return table;
@@ -242,29 +245,43 @@ public static class AnomalyEngine
     internal static void RankDescending(double[] scores, bool[] excluded, int[] output)
     {
         Array.Clear(output);
-        var count = 0;
-        var indices = new int[scores.Length];
-        for (var i = 0; i < scores.Length; i++)
+        var indices = ArrayPool<int>.Shared.Rent(scores.Length);
+        try
         {
-            if (!excluded[i] && !double.IsNaN(scores[i]))
+            var count = 0;
+            for (var i = 0; i < scores.Length; i++)
             {
-                indices[count++] = i;
+                if (!excluded[i] && !double.IsNaN(scores[i]))
+                {
+                    indices[count++] = i;
+                }
+            }
+
+            // 符号を反転した値を昇順に並べる（= 降順）。同値には同じ最小順位を付けるので安定性は問わない。
+            // プールの配列は要求より長い場合がある。初期化・並べ替え・参照は先頭 count 件だけに限る。
+            var keys = ArrayPool<double>.Shared.Rent(count);
+            try
+            {
+                for (var k = 0; k < count; k++)
+                {
+                    keys[k] = -scores[indices[k]];
+                }
+
+                Array.Sort(keys, indices, 0, count);
+                for (var r = 0; r < count; r++)
+                {
+                    var i = indices[r];
+                    output[i] = r > 0 && scores[indices[r - 1]] == scores[i] ? output[indices[r - 1]] : r + 1;
+                }
+            }
+            finally
+            {
+                ArrayPool<double>.Shared.Return(keys);
             }
         }
-
-        // 符号を反転した値を昇順に並べる（= 降順）。double の配列の並べ替えは委譲の比較より数倍速い。
-        // 同値の並びは安定でなくてよい（同値には同じ最小順位を付けるので結果は変わらない）
-        var keys = new double[count];
-        for (var k = 0; k < count; k++)
+        finally
         {
-            keys[k] = -scores[indices[k]];
-        }
-
-        Array.Sort(keys, indices, 0, count);
-        for (var r = 0; r < count; r++)
-        {
-            var i = indices[r];
-            output[i] = r > 0 && scores[indices[r - 1]] == scores[i] ? output[indices[r - 1]] : r + 1;
+            ArrayPool<int>.Shared.Return(indices);
         }
     }
 }

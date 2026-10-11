@@ -106,14 +106,18 @@ public sealed class WalkForwardBacktester(AnalysisDatabase database)
             }
 
             var selected = await SelectPointsAsync(symbol.Id, table, modes, stats);
+            var pointsToSave = new List<(string CacheKey, IReadOnlyList<EntryPoint> Points)>();
             for (var k = 0; k < selected.Count; k++)
             {
                 if (selected[k] is { } p)
                 {
-                    await database.SaveBacktestPointsAsync(symbol.Id, reportDate, keys[k], p);
+                    pointsToSave.Add((keys[k], p));
                 }
             }
 
+            var saveStarted = Stopwatch.GetTimestamp();
+            await database.SaveBacktestPointsBatchAsync(symbol.Id, reportDate, pointsToSave);
+            stats.Save += Stopwatch.GetElapsedTime(saveStarted);
             points[reportDate] = selected[0]!;
         }
 
@@ -148,6 +152,11 @@ public sealed class WalkForwardBacktester(AnalysisDatabase database)
             string.Join(',', symbols.OrderBy(s => s.Id, StringComparer.Ordinal)
                 .Select(s => s.Id + ":" + s.FallbackSpread.ToString("R", CultureInfo.InvariantCulture))),
             mode.Sql.Trim());
+        // 平均モードの既存キーは維持し、期間別の指標は SQL を編集した場合も混同しない。
+        if (mode.EffectiveEvaluationDays is { } days)
+        {
+            text += "|evaluation-days=" + days.ToString(CultureInfo.InvariantCulture);
+        }
         return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
     }
 
@@ -216,7 +225,9 @@ public sealed class WalkForwardBacktester(AnalysisDatabase database)
             var selected = await SelectCompositePointsAsync(tables, mode, metric, stats);
             if (tables.Count == symbols.Count)
             {
+                var saveStarted = Stopwatch.GetTimestamp();
                 await database.SaveCompositeBacktestPointsAsync(reportDate, key, selected);
+                stats.Save += Stopwatch.GetElapsedTime(saveStarted);
             }
 
             points[reportDate] = selected;
@@ -285,12 +296,12 @@ public sealed class WalkForwardBacktester(AnalysisDatabase database)
         {
             if (ModeDefinition.ParseBuiltIn(mode.Sql) is { } selection)
             {
-                var valueColumn = ModeSql.CompositeColumn(metric);
+                var valueColumn = ModeSql.CompositeColumn(metric, mode.EffectiveEvaluationDays);
                 return await Task.Run(() => CompositePointSelector.Select(
                     tables.ToDictionary(t => t.SymbolId, t => PointSelector.BuiltInCandidates(t.Table, selection, valueColumn))));
             }
 
-            return await database.SelectCompositePointsWithoutSavingAsync(tables, mode.Sql, metric);
+            return await database.SelectCompositePointsWithoutSavingAsync(tables, mode.Sql, metric, evaluationDays: mode.EffectiveEvaluationDays);
         }
         finally
         {
@@ -307,6 +318,8 @@ public sealed class WalkForwardBacktester(AnalysisDatabase database)
 
         public TimeSpan Select { get; set; }
 
+        public TimeSpan Save { get; set; }
+
         public int Analyses { get; set; }
 
         public void Report(int computed)
@@ -319,6 +332,7 @@ public sealed class WalkForwardBacktester(AnalysisDatabase database)
             Timing.Record("walkforward", "matrix", Matrix);
             Timing.Record("walkforward", "compute", Compute, $"{Analyses} 回, 平均 {Compute.TotalMilliseconds / Analyses:0} ms");
             Timing.Record("walkforward", "select", Select, $"{computed} 回, 平均 {(computed > 0 ? Select.TotalMilliseconds / computed : 0):0} ms");
+            Timing.Record("walkforward", "save", Save);
         }
     }
 

@@ -31,15 +31,54 @@ public static class JsonFileStore
     }
 
     public static void Save<T>(string path, T value, JsonTypeInfo<T> typeInfo)
+        => Save(path, value, typeInfo, (source, destination) => File.Move(source, destination, overwrite: true), Thread.Sleep);
+
+    /// <summary>置換と待機の境界だけを差し替え、失敗時の既存ファイル保持も実ファイルで検証する。</summary>
+    internal static void Save<T>(string path, T value, JsonTypeInfo<T> typeInfo,
+        Action<string, string> replace, Action<int> delay)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        var temp = path + ".tmp";
-        using (var stream = File.Create(temp))
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true, Encoder = Encoder }))
+        // 保存が重なっても、別の保存の途中にある一時ファイルを上書きしない。
+        var temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
         {
-            JsonSerializer.Serialize(writer, value, typeInfo);
-        }
+            using (var stream = File.Create(temp))
+            using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true, Encoder = Encoder }))
+            {
+                JsonSerializer.Serialize(writer, value, typeInfo);
+            }
 
-        File.Move(temp, path, overwrite: true);
+            // Windows の短いファイル保持に限って再試行する。最大 5 回・待機計 375 ms。
+            // 同じアクセス拒否でも恒久的な権限不足は最後の例外をそのまま呼出元へ返す。
+            for (var attempt = 0; ; attempt++)
+            {
+                try
+                {
+                    replace(temp, path);
+                    break;
+                }
+                catch (Exception ex) when (attempt < 4 && IsRetryableReplacementFailure(ex))
+                {
+                    delay(25 << attempt);
+                }
+            }
+        }
+        finally
+        {
+            try
+            {
+                File.Delete(temp);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // 後片付けの失敗で、保存失敗の本来の例外を上書きしない。
+            }
+        }
     }
+
+    private static bool IsRetryableReplacementFailure(Exception ex) =>
+        OperatingSystem.IsWindows() && (ex is IOException or UnauthorizedAccessException) &&
+        // ERROR_ACCESS_DENIED / ERROR_SHARING_VIOLATION / ERROR_LOCK_VIOLATION。
+        // 容量不足やパス不正など、ほかの I/O エラーは直ちに返す。
+        (uint)ex.HResult is 0x80070005 or 0x80070020 or 0x80070021;
 }

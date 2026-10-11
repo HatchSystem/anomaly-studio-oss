@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.ComponentModel;
 using AnomalyStudio.Core.Modes;
+using AnomalyStudio.Core.Storage;
 
 namespace AnomalyStudio.Services;
 
@@ -26,11 +27,27 @@ public sealed class AiSqlAssistant
     public const string CredentialTarget = "AnomalyStudio:AiApiKey";
 
     private readonly AppSettings _settings;
+    private readonly HttpClient _connectionHttp;
+    private readonly HttpClient _completionHttp;
+    private readonly Func<string, bool> _saveKey;
+    private readonly Action _deleteKey;
+    private long _connectionVersion;
 
     public AiSqlAssistant(AppSettings settings)
+        : this(settings, Http, CompletionHttp, ReadStoredKey, WriteStoredKey, () => CredentialStore.Delete(CredentialTarget))
+    {
+    }
+
+    /// <summary>通信と資格情報の境界を差し替え、接続中の設定変更も外部サービスなしで検証する。</summary>
+    internal AiSqlAssistant(AppSettings settings, HttpClient connectionHttp, HttpClient completionHttp,
+        Func<string?> readKey, Func<string, bool> saveKey, Action deleteKey)
     {
         _settings = settings;
-        ApiKey = ReadStoredKey() ?? string.Empty;
+        _connectionHttp = connectionHttp;
+        _completionHttp = completionHttp;
+        _saveKey = saveKey;
+        _deleteKey = deleteKey;
+        ApiKey = readKey() ?? string.Empty;
         HasStoredKey = ApiKey.Length > 0;
 
         // ベースURL・モデルを変えたら、接続テストをやり直すまで使えなくする
@@ -63,22 +80,23 @@ public sealed class AiSqlAssistant
             ? null
             : await TestConnectionAsync(_settings.AiBaseUrl, _settings.AiModel, ApiKey, cancellationToken);
 
-    /// <summary>保存したキーを消す（メモリからも消し、接続テストを取り消す）。</summary>
-    public void DeleteStoredKey()
+    /// <summary>保存したキーを消す。失敗してもメモリのキーと接続テストは無効にし、再試行できるよう保存済み表示は残す。</summary>
+    public bool DeleteStoredKey()
     {
+        ApiKey = string.Empty;
+        Invalidate();
         try
         {
-            CredentialStore.Delete(CredentialTarget);
+            _deleteKey();
         }
         catch (Win32Exception)
         {
-            // 消せなくても、この起動中は使わない
+            return false;
         }
 
-        ApiKey = string.Empty;
         HasStoredKey = false;
-        Invalidate();
         ConnectionChanged?.Invoke(this, EventArgs.Empty);
+        return true;
     }
 
     private static string? ReadStoredKey()
@@ -99,20 +117,20 @@ public sealed class AiSqlAssistant
     /// <summary>設定が変わったので、接続テストをやり直すまで使えなくする。</summary>
     public void Invalidate()
     {
-        if (IsConnected)
-        {
-            IsConnected = false;
-            ConnectionChanged?.Invoke(this, EventArgs.Empty);
-        }
+        // 未接続のテスト中にも世代を進める。古い応答で変更後の設定や削除したキーを復活させない。
+        _connectionVersion++;
+        IsConnected = false;
+        ConnectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
     /// ベース URL の /models を API キーで取得し、応答にモデルが含まれるか確かめる。
-    /// 合格すれば AI アシストを使えるようにする。結果の説明を返す。
+    /// 合格すれば AI アシストを使えるようにする。結果の説明を返す。途中で設定が変わった古いテストは null。
     /// </summary>
-    public async Task<string> TestConnectionAsync(string baseUrl, string model, string apiKey, CancellationToken cancellationToken = default)
+    public async Task<string?> TestConnectionAsync(string baseUrl, string model, string apiKey, CancellationToken cancellationToken = default)
     {
         Invalidate();
+        var version = _connectionVersion;
         if (Endpoint(baseUrl, "models") is not { } uri)
         {
             return "ベースURLが正しくありません（例 https://api.openai.com/v1）";
@@ -132,7 +150,11 @@ public sealed class AiSqlAssistant
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, uri);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey.Trim());
-            using var response = await Http.SendAsync(request, cancellationToken);
+            using var response = await _connectionHttp.SendAsync(request, cancellationToken);
+            if (version != _connectionVersion)
+            {
+                return null;
+            }
             if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
             {
                 return "APIキーが認証されませんでした";
@@ -144,6 +166,10 @@ public sealed class AiSqlAssistant
             }
 
             var ids = ReadModelIds(await response.Content.ReadAsStringAsync(cancellationToken));
+            if (version != _connectionVersion)
+            {
+                return null;
+            }
             if (ids is not null && !ids.Contains(model.Trim()))
             {
                 return $"モデル「{model.Trim()}」が見つかりません";
@@ -151,7 +177,12 @@ public sealed class AiSqlAssistant
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            return "接続できません: " + ex.Message;
+            return version == _connectionVersion ? "接続できません: " + ex.Message : null;
+        }
+
+        if (version != _connectionVersion || cancellationToken.IsCancellationRequested)
+        {
+            return null;
         }
 
         ApiKey = apiKey.Trim();
@@ -165,14 +196,19 @@ public sealed class AiSqlAssistant
     {
         try
         {
-            CredentialStore.Write(CredentialTarget, "AnomalyStudio", ApiKey, "AnomalyStudio の AI アシスト（OpenAI 互換 API）の API キー");
-            HasStoredKey = OperatingSystem.IsWindows();
+            HasStoredKey = _saveKey(ApiKey);
             return HasStoredKey;
         }
         catch (Win32Exception)
         {
             return false;
         }
+    }
+
+    private static bool WriteStoredKey(string key)
+    {
+        CredentialStore.Write(CredentialTarget, "AnomalyStudio", key, "AnomalyStudio の AI アシスト（OpenAI 互換 API）の API キー");
+        return OperatingSystem.IsWindows() || OperatingSystem.IsMacOS();
     }
 
     /// <summary>要望から抽出 SQL を生成する。</summary>
@@ -212,6 +248,7 @@ public sealed class AiSqlAssistant
             throw new InvalidOperationException("設定の「接続テスト」に合格すると AI アシストを使えます。");
         }
 
+        var version = _connectionVersion;
         var uri = Endpoint(_settings.AiBaseUrl, "chat/completions")
             ?? throw new InvalidOperationException("設定のベースURLが正しくありません。");
         var messages = new JsonArray
@@ -230,8 +267,12 @@ public sealed class AiSqlAssistant
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", ApiKey);
 
-        using var response = await CompletionHttp.SendAsync(request, cancellationToken);
+        using var response = await _completionHttp.SendAsync(request, cancellationToken);
         var text = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (version != _connectionVersion || !IsConnected)
+        {
+            throw new InvalidOperationException("AI の接続設定が変わりました。接続テストのあとで生成し直してください。");
+        }
         if (!response.IsSuccessStatusCode)
         {
             throw new HttpRequestException($"AI の応答がエラーです（HTTP {(int)response.StatusCode}）{ErrorDetail(text)}");
@@ -285,7 +326,7 @@ public sealed class AiSqlAssistant
                     .OfType<string>()];
             }
         }
-        catch (JsonException)
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException)
         {
         }
 

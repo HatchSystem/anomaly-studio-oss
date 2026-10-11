@@ -23,7 +23,8 @@ public sealed record BuiltInSelection(
 
 /// <summary>
 /// 時間帯が重ならないようにポイントを選ぶ（貪欲法）。
-/// 占有範囲は半開区間 [Entry, Close) で、Close == 次の Entry は重複扱いしない（連続ドテン可）。
+/// 占有範囲は決済時刻を含む [Entry, Close] で、Close == 次の Entry も重複扱いする。
+/// 日跨ぎ分は翌日 0 時台へ折り返して、同じ時間帯のポイントと重複しないようにする。
 /// </summary>
 public static class PointSelector
 {
@@ -157,7 +158,7 @@ public static class PointSelector
         return selected;
     }
 
-    /// <summary>[Entry, Close) が空いていれば占有して true、重なれば何もせず false。</summary>
+    /// <summary>日跨ぎ分も含めて [Entry, Close] が空いていれば占有して true、重なれば何もせず false。</summary>
     internal static bool TryOccupy(bool[] occupied, int entry, int hold)
     {
         if (Overlaps(occupied, entry, hold))
@@ -165,7 +166,7 @@ public static class PointSelector
             return false;
         }
 
-        for (var j = 0; j < hold; j++)
+        for (var j = 0; j <= hold; j++)
         {
             occupied[(entry + j) % CandidateGrid.MinutesPerDay] = true;
         }
@@ -175,7 +176,7 @@ public static class PointSelector
 
     private static bool Overlaps(bool[] occupied, int entry, int hold)
     {
-        for (var j = 0; j < hold; j++)
+        for (var j = 0; j <= hold; j++)
         {
             if (occupied[(entry + j) % CandidateGrid.MinutesPerDay])
             {

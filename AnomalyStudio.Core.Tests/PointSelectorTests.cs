@@ -6,16 +6,18 @@ namespace AnomalyStudio.Core.Tests;
 public sealed class PointSelectorTests
 {
     [TestMethod]
-    public void CloseEqualToNextEntry_IsNotOverlap()
+    public void CloseEqualToNextEntry_IsOverlap_AndNextMinuteIsAllowed()
     {
-        // 09:21→09:25 は 09:21〜09:24 を占有。09:25 開始は重ならない（連続ドテン可）
+        // 09:21→09:25 は決済時刻も占有。09:25 開始は除外し、09:26 開始は選べる。
         var points = PointSelector.SelectNonOverlapping(
         [
             new(TradeDirection.Long, 561, 4, 100),
             new(TradeDirection.Short, 565, 3, 90),
+            new(TradeDirection.Short, 566, 3, 80),
         ]);
 
-        Assert.AreEqual(2, points.Count);
+        CollectionAssert.AreEqual(new[] { 561, 566 }, points.Select(p => p.EntryMinute).ToArray());
+        CollectionAssert.AreEqual(new[] { 1, 2 }, points.Select(p => p.Rank).ToArray());
     }
 
     [TestMethod]
@@ -40,9 +42,11 @@ public sealed class PointSelectorTests
             new(TradeDirection.Long, 1438, 5, 100),
             new(TradeDirection.Long, 1, 3, 90),
             new(TradeDirection.Long, 3, 3, 80),
+            new(TradeDirection.Long, 4, 3, 70),
         ]);
 
-        CollectionAssert.AreEqual(new[] { 1438, 3 }, points.Select(p => p.EntryMinute).ToArray());
+        CollectionAssert.AreEqual(new[] { 1438, 4 }, points.Select(p => p.EntryMinute).ToArray());
+        CollectionAssert.AreEqual(new[] { 1, 2 }, points.Select(p => p.Rank).ToArray());
     }
 
     [TestMethod]
@@ -75,7 +79,8 @@ public sealed class PointSelectorTests
     public void SyntheticMarket_WinRatePointsFollowReferenceTieBreak()
     {
         // 勝率 100% は「09:05 に Close する Long」と「09:05 に Entry する Short」。
-        // 同スコアは Entry 昇順なので Long 08:50（保有 15 分）が 1 位、09:05 Short（保有 3 分）が 2 位
+        // 同スコアは Entry 昇順なので Long 08:50（保有 15 分）が 1 位。
+        // 09:05 Short は決済時刻と重なるため除外され、次は勝率 0% の同スコアから Long 00:00 が選ばれる。
         var table = AnomalyEngine.Compute(SyntheticMarket.Build(), new EngineParameters());
         var pool = Enumerable.Range(0, CandidateGrid.Count)
             .Where(i => !table.QualityExcluded[i] && !double.IsNaN(table.ScoreWinRate[i])
@@ -85,7 +90,8 @@ public sealed class PointSelectorTests
         var points = PointSelector.SelectNonOverlapping(PointSelector.OrderByPriority(pool));
 
         Assert.AreEqual((TradeDirection.Long, 530, 15), (points[0].Direction, points[0].EntryMinute, points[0].HoldMinutes));
-        Assert.AreEqual((TradeDirection.Short, 545, 3), (points[1].Direction, points[1].EntryMinute, points[1].HoldMinutes));
+        Assert.AreEqual((TradeDirection.Long, 0, 3), (points[1].Direction, points[1].EntryMinute, points[1].HoldMinutes));
+        Assert.IsFalse(points.Any(p => p.EntryMinute == SyntheticMarket.SpikeMinute));
         Assert.AreEqual(50, points.Count);
     }
 }

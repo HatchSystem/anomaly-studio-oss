@@ -5,6 +5,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" />
     <ProjectReference Include="..\AnomalyStudio.Core\AnomalyStudio.Core.csproj" />
+    <!-- Uno に依存しない AI 通信処理の実ソースを、テスト用の設定と通信・資格情報で検証する。 -->
+    <Compile Include="..\AnomalyStudio\Services\AiSqlAssistant.cs" Link="App\AiSqlAssistant.cs" />
+    <!-- 保存競合は実 ViewModel と実 MVVM 生成コードを使い、画面と永続化だけを置き換える。 -->
+    <Compile Include="..\AnomalyStudio\ViewModels\ModeDetailViewModel.cs" Link="App\ModeDetailViewModel.cs" />
+    <Compile Include="..\AnomalyStudio\ViewModels\CalendarViewModel.cs" Link="App\CalendarViewModel.cs" />
+    <Compile Include="..\AnomalyStudio\ViewModels\ClockedViewModel.cs" Link="App\ClockedViewModel.cs" />
+    <Compile Include="..\AnomalyStudio\Helpers\Format.cs" Link="App\Format.cs" />
+    <Compile Include="..\AnomalyStudio\Models\Models.cs" Link="App\Models.cs" />
   </ItemGroup>
 </Project>

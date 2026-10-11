@@ -4,8 +4,11 @@ namespace AnomalyStudio.Core.Analysis;
 public sealed record EngineParameters
 {
     /// <summary>計算方式の版（分析結果に記録し、ウォークフォワード用に保存したポイントのキーに含める。計算を変えたら上げる）。</summary>
-    /// <remarks>2: 候補の保有時間を 3〜30 分から 1〜60 分に広げた（正規化スコアの母集団が変わる）。</remarks>
-    public const string LogicVersion = "2";
+    /// <remarks>
+    /// 2: 候補の保有時間を 3〜30 分から 1〜60 分に広げた（正規化スコアの母集団が変わる）。
+    /// 3: ポイントの重複判定に決済時刻を含めた。日跨ぎ分の 0 時台への折り返しは維持。
+    /// </remarks>
+    public const string LogicVersion = "3";
 
     /// <summary>検証期間（日）。最長の期間が取得範囲になる。</summary>
     public IReadOnlyList<int> Periods { get; init; } = [30, 90, 180, 365];

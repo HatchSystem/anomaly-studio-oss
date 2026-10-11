@@ -22,6 +22,8 @@ public sealed partial class ModeDetailPage : Page
         }
     }
 
+    protected override void OnNavigatedFrom(NavigationEventArgs e) => ViewModel.Stop();
+
     /// <summary>元に戻せないので、確認してから削除する。</summary>
     private async void OnDeleteClick(object sender, RoutedEventArgs e)
     {

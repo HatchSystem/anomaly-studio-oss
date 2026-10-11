@@ -148,8 +148,8 @@ public sealed class BuiltInSelectionTests
         foreach (var mode in ModeDefinition.Defaults)
         {
             var metric = mode.EffectiveCompositeMetric!.Value;
-            var expected = (await db.QueryCompositeCandidatesAsync(run.RunId, mode.Sql, metric)).OrderBy(c => (c.EntryMinute, c.HoldMinutes, c.Direction)).ToArray();
-            var actual = PointSelector.BuiltInCandidates(table, ModeDefinition.ParseBuiltIn(mode.Sql)!, ModeSql.CompositeColumn(metric))
+            var expected = (await db.QueryCompositeCandidatesAsync(run.RunId, mode.Sql, metric, mode.EffectiveEvaluationDays)).OrderBy(c => (c.EntryMinute, c.HoldMinutes, c.Direction)).ToArray();
+            var actual = PointSelector.BuiltInCandidates(table, ModeDefinition.ParseBuiltIn(mode.Sql)!, ModeSql.CompositeColumn(metric, mode.EffectiveEvaluationDays))
                 .OrderBy(c => (c.EntryMinute, c.HoldMinutes, c.Direction)).ToArray();
             CollectionAssert.AreEqual(expected, actual, mode.Name);
         }

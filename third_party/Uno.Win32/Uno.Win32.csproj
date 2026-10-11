@@ -1,0 +1,85 @@
+<Project>
+  <PropertyGroup>
+    <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+    <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+  </PropertyGroup>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Uno.UI.Runtime.Skia.Win32</AssemblyName>
+    <RootNamespace>Uno.UI.Runtime.Skia.Win32</RootNamespace>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>13.0</LangVersion>
+    <Optimize>true</Optimize>
+    <DebugType>portable</DebugType>
+    <Deterministic>true</Deterministic>
+    <PathMap>$(MSBuildProjectDirectory)=/_/third_party/Uno.Win32</PathMap>
+    <AssemblyVersion>255.255.255.255</AssemblyVersion>
+    <FileVersion>$(UnoWin32SourceVersion).1</FileVersion>
+    <InformationalVersion>$(UnoWin32SourceVersion)-anomalystudio-uia1+da217df2312e9e39676880f9cb4b8d519cc297e0</InformationalVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <DefineConstants>$(DefineConstants);HAS_UNO;HAS_UNO_WINUI</DefineConstants>
+    <IsPackable>false</IsPackable>
+    <!-- 上流 src/Directory.Build.props と同じ設定。Win32 専用 host を net10.0 として構築する。 -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Uno.Foundation" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="Uno.Foundation.Logging" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="Uno.WinRT" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="Uno.WinUI" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="Uno.WinUI.Runtime.Skia" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="Uno.WinUI.Runtime.Skia.Win32" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="Uno.WinUI.Graphics2DSK" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="Uno.Diagnostics.Eventing" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="SkiaSharp" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="HarfBuzzSharp" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="WebView2Aot" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="DirectNAot" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="DirectNAot.Extensions" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Web.WebView2" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Windows.CsWin32" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Uno.Foundation"><HintPath>$(PkgUno_Foundation)/uno-runtime/net10.0/skia/Uno.Foundation.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Uno.Foundation.Logging"><HintPath>$(PkgUno_Foundation_Logging)/lib/net9.0/Uno.Foundation.Logging.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Uno"><HintPath>$(PkgUno_WinRT)/uno-runtime/net10.0/skia/Uno.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Uno.UI.Dispatching"><HintPath>$(PkgUno_WinRT)/uno-runtime/net10.0/skia/Uno.UI.Dispatching.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Uno.UI"><HintPath>$(PkgUno_WinUI)/uno-runtime/net10.0/skia/Uno.UI.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Uno.UI.Composition"><HintPath>$(PkgUno_WinUI)/uno-runtime/net10.0/skia/Uno.UI.Composition.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Uno.Xaml"><HintPath>$(PkgUno_WinUI)/uno-runtime/net10.0/skia/Uno.Xaml.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Uno.UI.Runtime.Skia"><HintPath>$(PkgUno_WinUI_Runtime_Skia)/lib/net10.0/Uno.UI.Runtime.Skia.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Uno.UI.Runtime.Skia.Win32.Support"><HintPath>$(PkgUno_WinUI_Runtime_Skia_Win32)/lib/net10.0/Uno.UI.Runtime.Skia.Win32.Support.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="Uno.WinUI.Graphics2DSK"><HintPath>$(PkgUno_WinUI_Graphics2DSK)/lib/net10.0/Uno.WinUI.Graphics2DSK.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Uno.Diagnostics.Eventing"><HintPath>$(PkgUno_Diagnostics_Eventing)/lib/net5.0/Uno.Diagnostics.Eventing.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="SkiaSharp"><HintPath>$(PkgSkiaSharp)/ref/net8.0/SkiaSharp.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="HarfBuzzSharp"><HintPath>$(PkgHarfBuzzSharp)/lib/net8.0/HarfBuzzSharp.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="WebView2"><HintPath>$(PkgWebView2Aot)/lib/net10.0/WebView2.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="DirectN"><HintPath>$(PkgDirectNAot)/lib/net10.0/DirectN.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="DirectN.Extensions"><HintPath>$(PkgDirectNAot_Extensions)/lib/net10.0/DirectN.Extensions.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Microsoft.Web.WebView2.Core"><HintPath>$(PkgMicrosoft_Web_WebView2)/lib/netcoreapp3.0/Microsoft.Web.WebView2.Core.dll</HintPath><Private>false</Private><Aliases>mswebview2</Aliases></Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="upstream/Uno.UI.Runtime.Skia.Win32/**/*.cs"
+             Exclude="upstream/Uno.UI.Runtime.Skia.Win32/Accessibility/Win32Accessibility.cs;upstream/Uno.UI.Runtime.Skia.Win32/Accessibility/Win32UIAutomationInterop.cs" />
+    <Compile Include="patched/**/*.cs" />
+    <AdditionalFiles Include="upstream/Uno.UI.Runtime.Skia.Win32/BannedSymbols.txt" />
+    <Content Include="License.md;NOTICE.md;THIRD-PARTY-NOTICES.md"
+             Link="licenses/Uno.Win32/%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <!-- 元のランタイムは Uno.UI の ProjectReference を使い、アプリ用 XAML 生成器を使わない。
+       実装 DLL の取得に用いた NuGet パッケージ由来の生成器だけを除く。通常の検査器は維持する。 -->
+  <Target Name="RemoveAppXamlGeneratorFromRuntimeBuild" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <_AppXamlGenerator Include="@(Analyzer)" Condition="'%(Analyzer.Filename)' == 'Uno.UI.SourceGenerators'" />
+      <Analyzer Remove="@(_AppXamlGenerator)" />
+    </ItemGroup>
+  </Target>
+</Project>

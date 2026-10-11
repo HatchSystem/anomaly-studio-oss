@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using AnomalyStudio.Core;
 using AnomalyStudio.Core.Analysis;
+using AnomalyStudio.Core.Backtesting;
 using AnomalyStudio.Core.Modes;
 using AnomalyStudio.Core.Symbols;
 using AnomalyStudio.Core.Trading;
@@ -144,6 +145,8 @@ public sealed record BacktestConditions(
 public abstract partial class BacktestViewModelBase : ObservableObject
 {
     private readonly bool _initialized;
+    private readonly bool _optimization;
+    private bool _applyingConditions;
     private readonly AppSettings _settings;
     private IReadOnlyList<BacktestTrade> _trades = [];
 
@@ -151,23 +154,29 @@ public abstract partial class BacktestViewModelBase : ObservableObject
     private IReadOnlyList<BacktestTrade> _filtered = [];
     private CancellationTokenSource? _cts;
 
-    protected BacktestViewModelBase(AnomalyWorkspace workspace, AppSettings settings)
+    protected BacktestViewModelBase(AnomalyWorkspace workspace, AppSettings settings, bool optimization = false)
     {
         Workspace = workspace;
         _settings = settings;
+        _optimization = optimization;
         var enabled = workspace.Symbols.Enabled;
-        SymbolOptions = [.. enabled.Select((s, i) => new SymbolOptionViewModel(s.Id, i == 0, OnSymbolChanged))];
+        var symbolIds = enabled.Select(s => s.Id).ToArray();
+        Modes = [.. workspace.Modes.All.Select(m => m.Name)];
+        var defaultMode = workspace.Modes.Enabled.FirstOrDefault()?.Name ?? Modes.FirstOrDefault() ?? string.Empty;
+        var saved = optimization ? settings.OptimizationConditions : settings.WalkForwardConditions;
+        var state = (saved ?? BacktestScreenState.CreateDefault(symbolIds, defaultMode, Jst.Today.ToDateTime(TimeOnly.MinValue)))
+            .Restore(symbolIds, Modes, defaultMode);
+        SymbolOptions = [.. enabled.Select(s => new SymbolOptionViewModel(s.Id, state.SymbolIds.Contains(s.Id), OnSymbolChanged))];
         Weekdays = [.. WeekdayOptionViewModel.TradingDays
             .Select(d => new WeekdayOptionViewModel(
                 Format.Weekday(d).ToString(),
                 d, settings.BacktestWeekdays.Contains(d), OnWeekdayChanged))];
-        Modes = [.. workspace.Modes.All.Select(m => m.Name)];
-        SelectedMode = workspace.Modes.Enabled.FirstOrDefault()?.Name ?? Modes.FirstOrDefault() ?? string.Empty;
-        // 既定の検証期間は直近 1 年（終了は今日。取引日は JST なので PC のタイムゾーンによらず JST の今日）
-        var today = Jst.Today.ToDateTime(TimeOnly.MinValue);
-        EndDate = today;
-        StartDate = today.AddYears(-1);
+        SelectedMode = state.Mode;
+        Cycle = state.Cycle;
+        StartDate = state.StartDate;
+        EndDate = state.EndDate;
         _initialized = true;
+        SaveConditions();
     }
 
     protected AnomalyWorkspace Workspace { get; }
@@ -223,10 +232,20 @@ public abstract partial class BacktestViewModelBase : ObservableObject
     private void SelectAllSymbols()
     {
         var target = !SymbolOptions.All(s => s.IsChecked);
-        foreach (var s in SymbolOptions)
+        _applyingConditions = true;
+        try
         {
-            s.IsChecked = target;
+            foreach (var s in SymbolOptions)
+            {
+                s.IsChecked = target;
+            }
         }
+        finally
+        {
+            _applyingConditions = false;
+        }
+
+        OnSymbolChanged();
     }
 
     [RelayCommand]
@@ -386,7 +405,9 @@ public abstract partial class BacktestViewModelBase : ObservableObject
     public partial string RunEta { get; set; } = string.Empty;
 
     public string RunCondition =>
-        $"{SymbolListLabel} · {SelectedMode} · {CycleLabel} · {Format.Slash(From.ToDateTime(TimeOnly.MinValue))} – {Format.Slash(To.ToDateTime(TimeOnly.MinValue))}";
+        $"{SymbolListLabel} · {SelectedMode} · {CycleLabel} · {DateLabel(StartDate)} – {DateLabel(EndDate)}";
+
+    private static string DateLabel(DateTimeOffset? date) => date is { } value ? Format.Slash(value.Date) : "未選択";
 
     public bool IsDaily
     {
@@ -413,10 +434,6 @@ public abstract partial class BacktestViewModelBase : ObservableObject
         _ => "毎月",
     };
 
-    private DateOnly To => EndDate?.Date is { } e ? DateOnly.FromDateTime(e) : Jst.Today.AddDays(-1);
-
-    private DateOnly From => StartDate?.Date is { } s && DateOnly.FromDateTime(s) <= To ? DateOnly.FromDateTime(s) : To.AddMonths(-3);
-
     /// <summary>選んだ銘柄が 1 つならその銘柄（複合や未選択は null）。</summary>
     protected SymbolProfile? Symbol => SelectedSymbols is [var only] ? only : null;
 
@@ -436,27 +453,31 @@ public abstract partial class BacktestViewModelBase : ObservableObject
     public BacktestConditions Conditions => new(SelectedSymbolIds, SelectedMode, Cycle, StartDate, EndDate);
 
     /// <summary>
-    /// 別の画面の条件を反映する。選択肢にない銘柄・モードは無視する（今の選択を残す）。
-    /// 条件が変わるたびに <see cref="OnConditionChanged"/> が呼ばれる。
+    /// 別の画面の条件を反映して保存する。空の銘柄選択も反映する。
+    /// すべて反映してから一度だけ <see cref="OnConditionChanged"/> を呼ぶ。
     /// </summary>
     public void ApplyConditions(BacktestConditions conditions)
     {
-        if (conditions.SymbolIds.Any(id => SymbolOptions.Any(o => o.Id == id)))
+        var state = new BacktestScreenState(conditions.SymbolIds, conditions.Mode, conditions.Cycle, conditions.StartDate, conditions.EndDate)
+            .Restore(SymbolOptions.Select(o => o.Id).ToArray(), Modes, SelectedMode);
+        _applyingConditions = true;
+        try
         {
             foreach (var option in SymbolOptions)
             {
-                option.IsChecked = conditions.SymbolIds.Contains(option.Id);
+                option.IsChecked = state.SymbolIds.Contains(option.Id);
             }
+            SelectedMode = state.Mode;
+            Cycle = state.Cycle;
+            StartDate = state.StartDate;
+            EndDate = state.EndDate;
         }
-
-        if (Modes.Contains(conditions.Mode))
+        finally
         {
-            SelectedMode = conditions.Mode;
+            _applyingConditions = false;
         }
 
-        Cycle = conditions.Cycle;
-        StartDate = conditions.StartDate;
-        EndDate = conditions.EndDate;
+        OnSymbolChanged();
     }
 
     /// <summary>条件が変わったとき。<paramref name="cycleOnly"/> は評価サイクルだけが変わった場合。</summary>
@@ -508,12 +529,16 @@ public abstract partial class BacktestViewModelBase : ObservableObject
 
     private void NotifyConditionChanged(bool cycleOnly)
     {
-        if (_initialized)
+        if (_initialized && !_applyingConditions)
         {
+            SaveConditions();
             OnPropertyChanged(nameof(RunCondition));
             OnConditionChanged(cycleOnly);
         }
     }
+
+    private void SaveConditions() => _settings.SetBacktestConditions(_optimization,
+        new BacktestScreenState(SelectedSymbolIds, SelectedMode, Cycle, StartDate, EndDate));
 
     [RelayCommand]
     private Task RunAsync() => ComputeAsync(showProgress: true);
@@ -522,29 +547,46 @@ public abstract partial class BacktestViewModelBase : ObservableObject
     private void CancelRun()
     {
         _cts?.Cancel();
+        _cts = null;
         IsRunning = false;
         Message = "バックテストを中止しました";
     }
 
     protected async Task ComputeAsync(bool showProgress)
     {
+        // 最適化確認は日付変更でも再計算する。無効な入力に変えたときも前の計算を中止し、古い結果を反映しない。
+        _cts?.Cancel();
+        _cts = null;
+        if (!BacktestDateRange.TryCreate(
+                StartDate is { } start ? DateOnly.FromDateTime(start.Date) : null,
+                EndDate is { } end ? DateOnly.FromDateTime(end.Date) : null,
+                out var range, out var error))
+        {
+            IsRunning = false;
+            Message = error;
+            ClearResults();
+            return;
+        }
+
         var symbol = Symbol;
         var composite = IsComposite;
         var mode = Workspace.Modes.All.FirstOrDefault(m => m.Name == SelectedMode);
         if ((symbol is null && !composite) || mode is null)
         {
+            IsRunning = false;
             Message = "銘柄とモードを選んでください";
+            ClearResults();
             return;
         }
 
         if (composite && mode.EffectiveCompositeMetric is null)
         {
+            IsRunning = false;
             Message = $"モード「{mode.Name}」は複数の銘柄をまとめた評価（複合ポイント）に対応していません（勝率重視・利益効率など、銘柄をまたいで比べられる指標のモードだけ）";
             ClearResults();
             return;
         }
 
-        _cts?.Cancel();
         var cts = _cts = new CancellationTokenSource();
         var started = DateTime.Now;
         IsRunning = showProgress;
@@ -567,7 +609,7 @@ public abstract partial class BacktestViewModelBase : ObservableObject
 
         try
         {
-            var result = await ComputeTradesAsync(composite ? null : symbol, mode, From, To, Cycle, progress, cts.Token);
+            var result = await ComputeTradesAsync(composite ? null : symbol, mode, range.From, range.To, Cycle, progress, cts.Token);
             if (cts.IsCancellationRequested)
             {
                 return;
@@ -767,11 +809,12 @@ public abstract partial class BacktestViewModelBase : ObservableObject
             return;
         }
 
-        var sb = new StringBuilder("日付,分析基準日,銘柄,モード,方向,Entry,Close,保有分,状態,Entry BID,raw,spread,net,net(" + units.Label + "),勝敗\n");
+        var sb = new StringBuilder(CsvRow.Format("日付", "分析基準日", "銘柄", "モード", "方向", "Entry", "Close",
+            "保有分", "状態", "Entry BID", "raw", "spread", "net", "net(" + units.Label + ")", "勝敗") + "\n");
         foreach (var trade in _filtered.OrderBy(t => t.Trade.EntryJst))
         {
             var (reportDate, t, symbolId) = trade;
-            sb.AppendLine(string.Join(',',
+            sb.AppendLine(CsvRow.Format(
                 t.TradeDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 reportDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 symbolId,
@@ -779,8 +822,8 @@ public abstract partial class BacktestViewModelBase : ObservableObject
                 CandidateGrid.DirectionName(t.Point.Direction),
                 t.EntryJst.ToString("HH:mm", CultureInfo.InvariantCulture),
                 t.CloseJst.ToString("HH:mm", CultureInfo.InvariantCulture),
-                t.Point.HoldMinutes,
-                t.Status,
+                t.Point.HoldMinutes.ToString(CultureInfo.InvariantCulture),
+                t.Status.ToString(),
                 Number(t.EntryPrice),
                 Number(t.Raw),
                 Number(t.Spread),
@@ -802,27 +845,27 @@ public abstract partial class BacktestViewModelBase : ObservableObject
             return;
         }
 
-        var sb = new StringBuilder($"{PeriodHeader},取引数,勝ち,負け,勝率,平均({UnitLabel}),合計({UnitLabel})\n");
+        var sb = new StringBuilder(CsvRow.Format(PeriodHeader, "取引数", "勝ち", "負け", "勝率", $"平均({UnitLabel})", $"合計({UnitLabel})") + "\n");
         foreach (var r in Rows)
         {
-            sb.AppendLine(string.Join(',', r.Label, r.Trades, r.Wins, r.Losses, r.WinRate, r.AveragePips, r.TotalPips));
+            sb.AppendLine(CsvRow.Format(r.Label, r.Trades, r.Wins, r.Losses, r.WinRate, r.AveragePips, r.TotalPips));
         }
 
-        sb.AppendLine(string.Join(',', "合計", SumTrades, SumWins, SumLosses, SumWinRate, SumAverage, SumTotal));
+        sb.AppendLine(CsvRow.Format("合計", SumTrades, SumWins, SumLosses, SumWinRate, SumAverage, SumTotal));
 
         // 安定性の指標とランダム基準（表示と同じ値。値なしは空欄）
         var s = _statistics;
         sb.AppendLine();
-        sb.AppendLine("指標,値");
-        sb.AppendLine(string.Join(',', "平均の t 値", Number(s.TStat)));
-        sb.AppendLine(string.Join(',', $"平均の 95% 信頼区間 半幅({UnitLabel})", Number(s.MeanCiHalfWidth)));
-        sb.AppendLine(string.Join(',', "プロフィットファクター", double.IsPositiveInfinity(s.ProfitFactor) ? "inf" : Number(s.ProfitFactor)));
-        sb.AppendLine(string.Join(',', $"最大ドローダウン({UnitLabel})", Number(s.MaxDrawdown)));
-        sb.AppendLine(string.Join(',', "最大連敗", s.MaxConsecutiveLosses));
+        sb.AppendLine(CsvRow.Format("指標", "値"));
+        sb.AppendLine(CsvRow.Format("平均の t 値", Number(s.TStat)));
+        sb.AppendLine(CsvRow.Format($"平均の 95% 信頼区間 半幅({UnitLabel})", Number(s.MeanCiHalfWidth)));
+        sb.AppendLine(CsvRow.Format("プロフィットファクター", double.IsPositiveInfinity(s.ProfitFactor) ? "inf" : Number(s.ProfitFactor)));
+        sb.AppendLine(CsvRow.Format($"最大ドローダウン({UnitLabel})", Number(s.MaxDrawdown)));
+        sb.AppendLine(CsvRow.Format("最大連敗", s.MaxConsecutiveLosses.ToString(CultureInfo.InvariantCulture)));
         if (_baseline is { } b)
         {
-            sb.AppendLine(string.Join(',', $"ランダム基準 {b.Trials} 試行の合計の平均({UnitLabel})", Number(b.MeanTotal)));
-            sb.AppendLine(string.Join(',', "実績が上回った試行の割合", Number(b.BeatRatio)));
+            sb.AppendLine(CsvRow.Format($"ランダム基準 {b.Trials} 試行の合計の平均({UnitLabel})", Number(b.MeanTotal)));
+            sb.AppendLine(CsvRow.Format("実績が上回った試行の割合", Number(b.BeatRatio)));
         }
 
         ReportSaved(Export($"{ExportName}_report_{SymbolFilePart}_{SelectedMode}_{CycleLabel}", sb.ToString()));

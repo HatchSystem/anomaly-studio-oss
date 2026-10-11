@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AnomalyStudio.Core.Modes;
 
 namespace AnomalyStudio.Core.Tests;
@@ -52,9 +53,54 @@ public sealed class ModeDefinitionTests
     {
         Assert.IsFalse(ModeDefinition.Defaults.Any(m => m.Id == "win-rate-lcb"));
         Assert.Contains("win-rate-lcb", ModeDefinition.RetiredIds);
-        CollectionAssert.AreEquivalent(new[] { "win-rate", "win-rate-bo", "profit-efficiency" }, ModeDefinition.Defaults.Select(m => m.Id).ToArray());
+        CollectionAssert.AreEquivalent(new[] { "win-rate", "win-rate-bo", "profit-efficiency", "profit-efficiency-30", "profit-efficiency-90", "profit-efficiency-365" }, ModeDefinition.Defaults.Select(m => m.Id).ToArray());
 
         // 以前の版の modes.json（信頼下限の指標を持つモード）を読めるように、指標の値は残す
         Assert.IsTrue(Enum.IsDefined(CompositeMetric.WinRateLowerBound));
+    }
+
+    [TestMethod]
+    public void PeriodProfitEfficiencyDefaults_AreOptional_AndKeepTheAverageMode()
+    {
+        var average = ModeDefinition.Defaults.Single(m => m.Id == "profit-efficiency");
+        Assert.IsTrue(average.Enabled);
+        Assert.IsNull(average.EffectiveEvaluationDays);
+        Assert.AreEqual(ModeDefinition.BuiltInSql("score_profit_eff"), average.Sql);
+
+        foreach (var (days, label) in new[] { (30, "短期30日"), (90, "中期90日"), (365, "長期365日") })
+        {
+            var mode = ModeDefinition.Defaults.Single(m => m.Id == $"profit-efficiency-{days}");
+            Assert.AreEqual($"利益効率（{label}）", mode.Name);
+            Assert.IsFalse(mode.Enabled, "追加したモードで既存の分析負荷や抽出結果を変えない");
+            Assert.AreEqual(days, mode.EvaluationDays);
+            Assert.AreEqual(days, mode.EffectiveEvaluationDays);
+            Assert.AreEqual(CompositeMetric.ProfitEfficiency, mode.EffectiveCompositeMetric);
+            Assert.AreEqual(ModeDefinition.BuiltInSql($"profit_eff_{days}"), mode.Sql);
+            Assert.IsTrue(mode.IsDefault);
+            Assert.IsTrue(mode.HasDefaultSql);
+        }
+    }
+
+    [TestMethod]
+    public void EvaluationDays_UsesDefaultIdWhenMissingFromSavedJson_AndPreservesExplicitValues()
+    {
+        foreach (var days in new[] { 30, 90, 365 })
+        {
+            // 評価期間・複合指標を持たない保存データも、既定の ID から補完する。
+            var json = $$"""
+                {"Id":"profit-efficiency-{{days}}","Name":"保存済み","Description":"","Sql":"SELECT 1","Enabled":false}
+                """;
+            var saved = JsonSerializer.Deserialize<ModeDefinition>(json)!;
+            Assert.IsNull(saved.EvaluationDays);
+            Assert.AreEqual(days, saved.EffectiveEvaluationDays);
+            Assert.AreEqual(CompositeMetric.ProfitEfficiency, saved.EffectiveCompositeMetric);
+            Assert.AreEqual(90, (saved with { EvaluationDays = 90 }).EffectiveEvaluationDays);
+            Assert.IsNull((saved with { Id = "custom" }).EffectiveEvaluationDays);
+
+            var explicitMode = saved with { EvaluationDays = days };
+            var serialized = JsonSerializer.Serialize(explicitMode);
+            Assert.IsFalse(serialized.Contains("EffectiveEvaluationDays", StringComparison.Ordinal));
+            Assert.AreEqual(days, JsonSerializer.Deserialize<ModeDefinition>(serialized)!.EvaluationDays);
+        }
     }
 }

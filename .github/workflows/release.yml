@@ -69,6 +69,12 @@ jobs:
       - name: ライセンスを同梱する
         run: cp LICENSE.md THIRD-PARTY-NOTICES.md publish/
 
+      - name: 導入手順と操作マニュアルを同梱する
+        run: |
+          mkdir -p publish/docs
+          cp -R docs/manual docs/design publish/docs/
+          cp docs/INSTALL.md docs/CHANGELOG.md publish/docs/
+
       - name: アイコンを用意する（Windows）
         if: runner.os == 'Windows'
         run: |
@@ -147,6 +153,8 @@ jobs:
           ## インストール
 
           [導入マニュアル](https://github.com/HatchSystem/anomaly-studio-oss/blob/main/docs/INSTALL.md) の手順に従って、PC の種類に合うファイルをダウンロードしてください。
+
+          [変更履歴](https://github.com/HatchSystem/anomaly-studio-oss/blob/main/docs/CHANGELOG.md)・[実画面付き操作マニュアル](https://github.com/HatchSystem/anomaly-studio-oss/blob/main/docs/manual/README.md)も参照できます。インストール先の `docs/manual/index.html` は画像を内蔵しており、ブラウザーで閲覧・印刷できます。
 
           | 種類 | ファイル | 動作確認 |
           |---|---|---|
